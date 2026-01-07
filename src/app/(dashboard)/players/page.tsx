@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PlayerTable } from '@/components/player/player-table'
 import { AddPlayerDialog } from '@/components/player/add-player-dialog'
 import { ImportPlayersDialog } from '@/components/player/import-players-dialog'
+import { EditPlayerDialog } from '@/components/player/edit-player-dialog'
+import { DeletePlayerDialog } from '@/components/player/delete-player-dialog'
 
 export default function PlayersPage() {
   const [players, setPlayers] = useState([])
@@ -15,6 +17,9 @@ export default function PlayersPage() {
   const [search, setSearch] = useState('')
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showImportDialog, setShowImportDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null)
 
   const fetchPlayers = async () => {
     try {
@@ -45,6 +50,28 @@ export default function PlayersPage() {
 
   const handlePlayersImported = () => {
     setShowImportDialog(false)
+    fetchPlayers()
+  }
+
+  const handleEditPlayer = (player: any) => {
+    setSelectedPlayer(player)
+    setShowEditDialog(true)
+  }
+
+  const handleDeletePlayer = (player: any) => {
+    setSelectedPlayer(player)
+    setShowDeleteDialog(true)
+  }
+
+  const handlePlayerUpdated = () => {
+    setShowEditDialog(false)
+    setSelectedPlayer(null)
+    fetchPlayers()
+  }
+
+  const handlePlayerDeleted = () => {
+    setShowDeleteDialog(false)
+    setSelectedPlayer(null)
     fetchPlayers()
   }
 
@@ -95,6 +122,8 @@ export default function PlayersPage() {
             players={players}
             loading={loading}
             onUpdate={fetchPlayers}
+            onEdit={handleEditPlayer}
+            onDelete={handleDeletePlayer}
           />
         </CardContent>
       </Card>
@@ -110,6 +139,24 @@ export default function PlayersPage() {
         onOpenChange={setShowImportDialog}
         onSuccess={handlePlayersImported}
       />
+
+      {selectedPlayer && (
+        <>
+          <EditPlayerDialog
+            open={showEditDialog}
+            onOpenChange={setShowEditDialog}
+            onSuccess={handlePlayerUpdated}
+            player={selectedPlayer}
+          />
+
+          <DeletePlayerDialog
+            open={showDeleteDialog}
+            onOpenChange={setShowDeleteDialog}
+            onSuccess={handlePlayerDeleted}
+            player={selectedPlayer}
+          />
+        </>
+      )}
     </div>
   )
 }

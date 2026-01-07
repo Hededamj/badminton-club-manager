@@ -1,21 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { createPlayerSchema, type CreatePlayerInput } from '@/lib/validators/player'
 
-interface AddPlayerDialogProps {
+interface EditPlayerDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  player: any
 }
 
-export function AddPlayerDialog({ open, onOpenChange, onSuccess }: AddPlayerDialogProps) {
+export function EditPlayerDialog({ open, onOpenChange, onSuccess, player }: EditPlayerDialogProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -24,31 +26,42 @@ export function AddPlayerDialog({ open, onOpenChange, onSuccess }: AddPlayerDial
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<CreatePlayerInput>({
     resolver: zodResolver(createPlayerSchema),
-    defaultValues: {
-      level: 1500,
-      isActive: true,
-    },
   })
+
+  const isActive = watch('isActive')
+
+  useEffect(() => {
+    if (player && open) {
+      reset({
+        name: player.name,
+        email: player.email || '',
+        phone: player.phone || '',
+        level: player.level,
+        isActive: player.isActive,
+      })
+    }
+  }, [player, open, reset])
 
   const onSubmit = async (data: CreatePlayerInput) => {
     try {
       setLoading(true)
       setError('')
 
-      const res = await fetch('/api/players', {
-        method: 'POST',
+      const res = await fetch(`/api/players/${player.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
 
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || 'Failed to create player')
+        throw new Error(errorData.error || 'Failed to update player')
       }
 
-      reset()
       onSuccess()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Der opstod en fejl')
@@ -61,9 +74,9 @@ export function AddPlayerDialog({ open, onOpenChange, onSuccess }: AddPlayerDial
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Tilføj spiller</DialogTitle>
+          <DialogTitle>Rediger spiller</DialogTitle>
           <DialogDescription>
-            Opret en ny spiller i klubben
+            Opdater spillerens oplysninger
           </DialogDescription>
         </DialogHeader>
 
@@ -125,6 +138,21 @@ export function AddPlayerDialog({ open, onOpenChange, onSuccess }: AddPlayerDial
             </p>
           </div>
 
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="isActive">Aktiv spiller</Label>
+              <p className="text-sm text-muted-foreground">
+                Inaktive spillere vises ikke i matchmaking
+              </p>
+            </div>
+            <Switch
+              id="isActive"
+              checked={isActive}
+              onCheckedChange={(checked) => setValue('isActive', checked)}
+              disabled={loading}
+            />
+          </div>
+
           {error && (
             <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
               {error}
@@ -141,7 +169,7 @@ export function AddPlayerDialog({ open, onOpenChange, onSuccess }: AddPlayerDial
               Annuller
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Opretter...' : 'Opret spiller'}
+              {loading ? 'Gemmer...' : 'Gem ændringer'}
             </Button>
           </div>
         </form>
