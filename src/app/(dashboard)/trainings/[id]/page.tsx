@@ -29,6 +29,11 @@ interface Training {
     id: string
     courtNumber: number
     matchNumber: number
+    benchedPlayers?: Array<{
+      id: string
+      name: string
+      level: number
+    }> | null
     matchPlayers: Array<{
       player: {
         id: string
@@ -388,14 +393,47 @@ export default function TrainingDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {Array.from({ length: training.courts }, (_, courtIndex) => (
-                <div key={courtIndex + 1} className="space-y-2">
-                  <h3 className="font-semibold text-lg">Bane {courtIndex + 1}</h3>
-                  <div className="space-y-2">
-                    {training.matches
-                      .filter(m => m.courtNumber === courtIndex + 1)
-                      .sort((a, b) => a.matchNumber - b.matchNumber)
-                      .map(match => {
+              {Array.from({ length: training.courts }, (_, courtIndex) => {
+                // Get matches for this court
+                const courtMatches = training.matches
+                  .filter(m => m.courtNumber === courtIndex + 1)
+                  .sort((a, b) => a.matchNumber - b.matchNumber)
+
+                // Find benched players for this court (from any match on this court)
+                const benchedPlayersForCourt = courtMatches
+                  .flatMap(m => m.benchedPlayers || [])
+                  .filter((player, index, self) =>
+                    self.findIndex(p => p.id === player.id) === index
+                  ) // Remove duplicates
+
+                return (
+                  <div key={courtIndex + 1} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-lg">Bane {courtIndex + 1}</h3>
+                      {benchedPlayersForCourt.length > 0 && (
+                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                          {benchedPlayersForCourt.length} sidder over
+                        </Badge>
+                      )}
+                    </div>
+
+                    {benchedPlayersForCourt.length > 0 && (
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+                        <p className="text-sm font-medium text-orange-900">
+                          Spillere der sidder over - bytter ind på denne bane:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {benchedPlayersForCourt.map(player => (
+                            <Badge key={player.id} variant="secondary" className="bg-white">
+                              {player.name} ({Math.round(player.level)})
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      {courtMatches.map(match => {
                         const team1 = match.matchPlayers.filter(mp => mp.team === 1)
                         const team2 = match.matchPlayers.filter(mp => mp.team === 2)
 
@@ -446,9 +484,10 @@ export default function TrainingDetailPage() {
                           </div>
                         )
                       })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </CardContent>
         </Card>

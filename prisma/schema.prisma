@@ -110,14 +110,15 @@ model TrainingPlayer {
 
 // Match
 model Match {
-  id           String      @id @default(uuid())
-  trainingId   String?     @map("training_id")
-  tournamentId String?     @map("tournament_id")
-  courtNumber  Int         @map("court_number")
-  matchNumber  Int         @map("match_number") // Match 1, 2, 3 on each court
-  status       MatchStatus @default(PENDING)
-  completedAt  DateTime?   @map("completed_at")
-  createdAt    DateTime    @default(now()) @map("created_at")
+  id             String      @id @default(uuid())
+  trainingId     String?     @map("training_id")
+  tournamentId   String?     @map("tournament_id")
+  courtNumber    Int         @map("court_number")
+  matchNumber    Int         @map("match_number") // Match 1, 2, 3 on each court
+  status         MatchStatus @default(PENDING)
+  benchedPlayers Json?       @map("benched_players") // Players sitting out, waiting to sub in
+  completedAt    DateTime?   @map("completed_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
 
   training     Training?      @relation(fields: [trainingId], references: [id], onDelete: Cascade)
   tournament   Tournament?    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)

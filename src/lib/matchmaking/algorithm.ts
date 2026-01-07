@@ -21,6 +21,7 @@ export interface Match {
   matchNumber: number
   team1: [Player, Player]
   team2: [Player, Player]
+  benchedPlayers?: Player[] // Players sitting out for this match, assigned to this court
 }
 
 export interface PartnershipHistory {
@@ -249,6 +250,8 @@ export function generateMatches(
 
   // Generate matches for each round
   for (let matchNum = 1; matchNum <= matchesPerCourt; matchNum++) {
+    const roundMatches: Match[] = []
+
     // Generate matches for all courts in this round
     for (let court = 1; court <= courts; court++) {
       const availablePlayers = players.filter(p => !usedPlayers.has(p.id))
@@ -279,12 +282,48 @@ export function generateMatches(
       bestMatch.court = court
       bestMatch.matchNumber = matchNum
 
-      generatedMatches.push(bestMatch)
+      roundMatches.push(bestMatch)
 
       // Mark players as used for this round
       bestMatch.team1.forEach(p => usedPlayers.add(p.id))
       bestMatch.team2.forEach(p => usedPlayers.add(p.id))
     }
+
+    // Identify benched players (those not in any match this round)
+    const benchedPlayers = players.filter(p => !usedPlayers.has(p.id))
+
+    // Assign benched players to courts based on level matching
+    if (benchedPlayers.length > 0 && roundMatches.length > 0) {
+      benchedPlayers.forEach((benchedPlayer) => {
+        // Find the court where this player's level best matches the average
+        let bestCourtIndex = 0
+        let smallestLevelDiff = Infinity
+
+        roundMatches.forEach((match, index) => {
+          const matchAvgLevel = (
+            match.team1[0].level +
+            match.team1[1].level +
+            match.team2[0].level +
+            match.team2[1].level
+          ) / 4
+
+          const levelDiff = Math.abs(matchAvgLevel - benchedPlayer.level)
+
+          if (levelDiff < smallestLevelDiff) {
+            smallestLevelDiff = levelDiff
+            bestCourtIndex = index
+          }
+        })
+
+        // Assign benched player to the best matching court
+        if (!roundMatches[bestCourtIndex].benchedPlayers) {
+          roundMatches[bestCourtIndex].benchedPlayers = []
+        }
+        roundMatches[bestCourtIndex].benchedPlayers!.push(benchedPlayer)
+      })
+    }
+
+    generatedMatches.push(...roundMatches)
 
     // Clear used players for next round
     usedPlayers.clear()

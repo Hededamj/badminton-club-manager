@@ -97,12 +97,20 @@ export async function POST(
     // Create matches in database
     const createdMatches = await Promise.all(
       matches.map(async match => {
+        // Prepare benched players data
+        const benchedPlayersData = match.benchedPlayers?.map(p => ({
+          id: p.id,
+          name: p.name,
+          level: p.level,
+        })) || []
+
         const createdMatch = await prisma.match.create({
           data: {
             trainingId: training.id,
             courtNumber: match.court,
             matchNumber: match.matchNumber,
             status: 'PENDING',
+            benchedPlayers: benchedPlayersData.length > 0 ? benchedPlayersData : null,
             matchPlayers: {
               create: [
                 {
