@@ -72,15 +72,15 @@ export default function TrainingsPage() {
   }, [statusFilter])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">Træninger</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">Træninger</h1>
+        <p className="text-muted-foreground mt-2 text-sm md:text-base">
           Administrer træningssessioner og kampe
         </p>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <select
@@ -96,14 +96,16 @@ export default function TrainingsPage() {
           </select>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => setShowImportDialog(true)} className="flex-1 sm:flex-initial">
             <Download className="mr-2 h-4 w-4" />
-            Importer fra Holdsport
+            <span className="hidden sm:inline">Importer fra Holdsport</span>
+            <span className="sm:hidden">Importer</span>
           </Button>
-          <Button onClick={() => router.push('/trainings/new')}>
+          <Button onClick={() => router.push('/trainings/new')} className="flex-1 sm:flex-initial">
             <Plus className="mr-2 h-4 w-4" />
-            Opret træning
+            <span className="hidden sm:inline">Opret træning</span>
+            <span className="sm:hidden">Opret</span>
           </Button>
         </div>
       </div>
@@ -124,7 +126,7 @@ export default function TrainingsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {trainings.map((training) => (
             <Card
               key={training.id}

@@ -42,11 +42,21 @@ const navItems = [
   }
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void
+}
+
+export function Sidebar({ onClose }: SidebarProps = {}) {
   const pathname = usePathname()
 
+  const handleLinkClick = () => {
+    if (onClose) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="flex flex-col h-full bg-card border-r">
+    <div className="flex flex-col h-full bg-card border-r shadow-xl lg:shadow-none">
       <div className="p-6">
         <div className="flex items-center gap-3">
           <Image
@@ -76,6 +86,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={handleLinkClick}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all",
                 "hover:bg-accent hover:text-accent-foreground",

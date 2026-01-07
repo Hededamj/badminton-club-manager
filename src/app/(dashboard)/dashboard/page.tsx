@@ -41,25 +41,25 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground mt-2 text-sm md:text-base">
           Velkommen til Hareskov Badminton
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
         <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/players')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs md:text-sm font-medium">
               Aktive Spillere
             </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.overview.activePlayers || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xl md:text-2xl font-bold">{stats?.overview.activePlayers || 0}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground">
               {stats?.overview.totalPlayers || 0} i alt
             </p>
           </CardContent>
@@ -67,14 +67,14 @@ export default function DashboardPage() {
 
         <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/trainings')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs md:text-sm font-medium">
               Træninger
             </CardTitle>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
+            <Trophy className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.overview.totalTrainings || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xl md:text-2xl font-bold">{stats?.overview.totalTrainings || 0}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground">
               Afholdte sessioner
             </p>
           </CardContent>
@@ -82,14 +82,14 @@ export default function DashboardPage() {
 
         <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/statistics')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs md:text-sm font-medium">
               Afholdte Kampe
             </CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <Target className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.overview.completedMatches || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xl md:text-2xl font-bold">{stats?.overview.completedMatches || 0}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground">
               {stats?.overview.totalMatches || 0} genereret
             </p>
           </CardContent>
@@ -97,14 +97,14 @@ export default function DashboardPage() {
 
         <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/statistics')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs md:text-sm font-medium">
               Gennemsnit ELO
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{Math.round(stats?.overview.averageLevel || 1500)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xl md:text-2xl font-bold">{Math.round(stats?.overview.averageLevel || 1500)}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground">
               Klubbens niveau
             </p>
           </CardContent>

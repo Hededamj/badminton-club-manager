@@ -194,96 +194,102 @@ export default function TrainingDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
         <Button
           variant="ghost"
           onClick={() => router.push('/trainings')}
-          className="mb-4"
+          className="mb-4 -ml-4"
+          size="sm"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Tilbage til træninger
+          Tilbage
         </Button>
 
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">
+            <h1 className="text-xl md:text-2xl lg:text-4xl font-bold tracking-tight">
               Træning {format(new Date(training.date), 'dd. MMMM yyyy', { locale: da })}
             </h1>
-            <div className="flex items-center gap-3 mt-2">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-2">
               <Badge variant={statusVariants[training.status]}>
                 {statusLabels[training.status]}
               </Badge>
-              <span className="text-muted-foreground">
+              <span className="text-muted-foreground text-sm md:text-base">
                 {format(new Date(training.date), 'EEEE \'kl.\' HH:mm', { locale: da })}
               </span>
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {training.status === 'PLANNED' && (
               <Button
                 variant="outline"
                 onClick={() => handleStatusChange('IN_PROGRESS')}
                 disabled={training.matches.length === 0}
                 title={training.matches.length === 0 ? 'Generer kampe før du starter træningen' : ''}
+                size="sm"
               >
-                <Play className="mr-2 h-4 w-4" />
-                Start træning
+                <Play className="mr-1 md:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Start træning</span>
+                <span className="sm:hidden">Start</span>
               </Button>
             )}
             {training.status === 'IN_PROGRESS' && (
               <Button
                 variant="outline"
                 onClick={() => handleStatusChange('COMPLETED')}
+                size="sm"
               >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Afslut træning
+                <CheckCircle2 className="mr-1 md:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Afslut træning</span>
+                <span className="sm:hidden">Afslut</span>
               </Button>
             )}
-            <Button variant="destructive" onClick={handleDelete}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Slet
+            <Button variant="destructive" onClick={handleDelete} size="sm">
+              <Trash2 className="mr-1 md:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Slet</span>
+              <span className="sm:hidden">Slet</span>
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 md:gap-4 grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Baner</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs md:text-sm font-medium">Baner</CardTitle>
+            <Calendar className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{training.courts}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Tilgængelige baner
+            <div className="text-xl md:text-2xl font-bold">{training.courts}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
+              Tilgængelige
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Spillere</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs md:text-sm font-medium">Spillere</CardTitle>
+            <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{training.trainingPlayers.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Tilmeldte spillere
+            <div className="text-xl md:text-2xl font-bold">{training.trainingPlayers.length}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
+              Tilmeldte
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Kampe</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-medium">Kampe</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{training.matches.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Genererede kampe
+            <div className="text-xl md:text-2xl font-bold">{training.matches.length}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
+              Genererede
             </p>
           </CardContent>
         </Card>
@@ -380,10 +386,10 @@ export default function TrainingDetailPage() {
       {training.matches.length > 0 && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle>Kampprogram</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-base md:text-lg">Kampprogram</CardTitle>
+                <CardDescription className="text-xs md:text-sm">
                   {training.matches.length} kampe genereret
                 </CardDescription>
               </div>
@@ -410,6 +416,8 @@ export default function TrainingDetailPage() {
                   variant="outline"
                   onClick={handleGenerateMatches}
                   disabled={generating}
+                  size="sm"
+                  className="hidden md:flex"
                 >
                   {generating ? 'Regenererer...' : 'Regenerer kampe'}
                 </Button>
