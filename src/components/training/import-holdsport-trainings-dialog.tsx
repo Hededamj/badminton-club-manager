@@ -284,7 +284,7 @@ export function ImportHoldsportTrainingsDialog({
                           <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                             <span className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
-                              {format(new Date(training.date), 'd. MMMM yyyy', { locale: da })}
+                              {training.date ? format(new Date(training.date), 'd. MMMM yyyy', { locale: da }) : 'Ingen dato'}
                             </span>
                             {training.startTime && (
                               <span>

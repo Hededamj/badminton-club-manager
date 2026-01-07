@@ -38,6 +38,9 @@ export async function GET(request: NextRequest) {
 
     const auth = Buffer.from(`${username}:${password}`).toString('base64')
 
+    console.log('Fetching Holdsport activities for team:', teamId)
+    console.log('Auth header created (first 20 chars):', auth.substring(0, 20))
+
     // Fetch activities from Holdsport
     // Get activities from today and 3 days forward
     const today = new Date()
@@ -52,34 +55,55 @@ export async function GET(request: NextRequest) {
       date.setDate(today.getDate() + i)
       const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD
 
-      const response = await fetch(
-        `https://api.holdsport.dk/v1/teams/${teamId}/activities?date=${dateStr}`,
-        {
-          headers: {
-            'Authorization': `Basic ${auth}`,
-          },
-        }
-      )
+      const url = `https://api.holdsport.dk/v1/teams/${teamId}/activities?date=${dateStr}`
+      console.log(`Fetching from URL: ${url}`)
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Basic ${auth}`,
+        },
+      })
+
+      console.log(`Response for ${dateStr}: status=${response.status}`)
 
       if (response.ok) {
         const dayActivities = await response.json()
         console.log(`Activities on ${dateStr}:`, dayActivities.length)
         activities.push(...dayActivities)
+      } else {
+        const errorText = await response.text()
+        console.error(`Error fetching activities for ${dateStr}: ${response.status} - ${errorText}`)
       }
     }
 
     console.log(`Total activities fetched: ${activities.length}`)
 
-    // Transform to our format
-    const trainings = activities.map(activity => ({
-      holdsportId: activity.id,
-      name: activity.name,
-      date: activity.date,
-      startTime: activity.start_time,
-      endTime: activity.end_time,
-      playerCount: activity.attending ? activity.attending.length : 0,
-      players: activity.attending || [],
-    }))
+    // Transform to our format - filter out activities with invalid dates
+    const trainings = activities
+      .filter(activity => {
+        if (!activity.date) {
+          console.warn('Activity missing date:', activity.id, activity.name)
+          return false
+        }
+        try {
+          new Date(activity.date)
+          return true
+        } catch (e) {
+          console.warn('Activity has invalid date:', activity.id, activity.date)
+          return false
+        }
+      })
+      .map(activity => ({
+        holdsportId: activity.id,
+        name: activity.name || 'Unavngivet træning',
+        date: activity.date,
+        startTime: activity.start_time || null,
+        endTime: activity.end_time || null,
+        playerCount: activity.attending ? activity.attending.length : 0,
+        players: activity.attending || [],
+      }))
+
+    console.log(`Valid trainings after filtering: ${trainings.length}`)
 
     return NextResponse.json({
       trainings,

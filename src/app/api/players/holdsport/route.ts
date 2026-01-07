@@ -33,13 +33,21 @@ export async function GET(request: NextRequest) {
 
     const auth = Buffer.from(`${username}:${password}`).toString('base64')
 
+    console.log('Fetching Holdsport teams for user:', username)
+    console.log('Auth header created (first 20 chars):', auth.substring(0, 20))
+
     const response = await fetch('https://api.holdsport.dk/v1/teams', {
       headers: {
         'Authorization': `Basic ${auth}`,
       },
     })
 
+    console.log('Holdsport teams response status:', response.status)
+
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Holdsport error response:', errorText)
+
       if (response.status === 401) {
         return NextResponse.json(
           { error: 'Forkert brugernavn eller adgangskode' },
