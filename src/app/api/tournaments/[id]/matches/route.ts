@@ -3,20 +3,34 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
 
-// Helper to generate round robin matches
-function generateRoundRobinPairings(playerIds: string[]): { player1Id: string; player2Id: string }[] {
-  const pairings: { player1Id: string; player2Id: string }[] = []
+// Helper to check if match should be mixed doubles
+function shouldBeMixedDoubles(
+  team1Player1: any,
+  team1Player2: any,
+  team2Player1: any,
+  team2Player2: any
+): boolean {
+  const allHaveGender = [team1Player1, team1Player2, team2Player1, team2Player2].every(p => p.gender)
+  if (!allHaveGender) return false
 
-  for (let i = 0; i < playerIds.length; i++) {
-    for (let j = i + 1; j < playerIds.length; j++) {
-      pairings.push({
-        player1Id: playerIds[i],
-        player2Id: playerIds[j],
-      })
-    }
+  const genders = [team1Player1.gender, team1Player2.gender, team2Player1.gender, team2Player2.gender]
+  const maleCount = genders.filter(g => g === 'MALE').length
+  const femaleCount = genders.filter(g => g === 'FEMALE').length
+
+  return maleCount === 2 && femaleCount === 2
+}
+
+// Helper to arrange players for mixed doubles
+function arrangeMixedDoubles(players: any[]): any[] {
+  const males = players.filter(p => p.gender === 'MALE')
+  const females = players.filter(p => p.gender === 'FEMALE')
+
+  if (males.length !== 2 || females.length !== 2) {
+    return players // Not mixed doubles, return as is
   }
 
-  return pairings
+  // Arrange as: male1, female1, male2, female2
+  return [males[0], females[0], males[1], females[1]]
 }
 
 // Helper to generate single elimination bracket
@@ -228,10 +242,17 @@ export async function POST(
 
       for (let i = 0; i < numMatches; i++) {
         // Get 4 players for this match
-        const team1Player1 = sortedPlayerIds[playerIndex++]
-        const team1Player2 = sortedPlayerIds[playerIndex++]
-        const team2Player1 = sortedPlayerIds[playerIndex++]
-        const team2Player2 = sortedPlayerIds[playerIndex++]
+        let matchPlayers = [
+          sortedPlayers[playerIndex++],
+          sortedPlayers[playerIndex++],
+          sortedPlayers[playerIndex++],
+          sortedPlayers[playerIndex++],
+        ]
+
+        // Check if this should be mixed doubles and rearrange if needed
+        if (shouldBeMixedDoubles(matchPlayers[0], matchPlayers[1], matchPlayers[2], matchPlayers[3])) {
+          matchPlayers = arrangeMixedDoubles(matchPlayers)
+        }
 
         const match = await prisma.match.create({
           data: {
@@ -241,10 +262,10 @@ export async function POST(
             status: 'PENDING',
             matchPlayers: {
               create: [
-                { playerId: team1Player1, team: 1, position: 1 },
-                { playerId: team1Player2, team: 1, position: 2 },
-                { playerId: team2Player1, team: 2, position: 1 },
-                { playerId: team2Player2, team: 2, position: 2 },
+                { playerId: matchPlayers[0].id, team: 1, position: 1 },
+                { playerId: matchPlayers[1].id, team: 1, position: 2 },
+                { playerId: matchPlayers[2].id, team: 2, position: 1 },
+                { playerId: matchPlayers[3].id, team: 2, position: 2 },
               ],
             },
           },
