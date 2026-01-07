@@ -214,24 +214,25 @@ export async function POST(
         }
       }
     } else if (tournament.format === 'SINGLE_ELIMINATION') {
-      // Create bracket matches
-      for (let i = 0; i < pairings.length; i++) {
-        const pairing = pairings[i]
+      // For single elimination, create team pairings from sorted players
+      // Players should be arranged in teams of 2 first
+      if (sortedPlayerIds.length < 4) {
+        return NextResponse.json(
+          { error: 'Need at least 4 players for single elimination doubles' },
+          { status: 400 }
+        )
+      }
 
-        // For byes (null players), skip match creation or create with TBD
-        if (!pairing.player1Id || !pairing.player2Id) {
-          continue
-        }
+      // Create matches between pairs of teams
+      const numMatches = Math.floor(sortedPlayerIds.length / 4)
+      let playerIndex = 0
 
-        // Pair up players into teams (consecutive pairs become teams)
-        const team1Player1 = pairing.player1Id
-        const team1Player2 = i + 1 < pairings.length && pairings[i + 1].player1Id
-          ? pairings[i + 1].player1Id
-          : team1Player1
-        const team2Player1 = pairing.player2Id
-        const team2Player2 = i + 1 < pairings.length && pairings[i + 1].player2Id
-          ? pairings[i + 1].player2Id
-          : team2Player1
+      for (let i = 0; i < numMatches; i++) {
+        // Get 4 players for this match
+        const team1Player1 = sortedPlayerIds[playerIndex++]
+        const team1Player2 = sortedPlayerIds[playerIndex++]
+        const team2Player1 = sortedPlayerIds[playerIndex++]
+        const team2Player2 = sortedPlayerIds[playerIndex++]
 
         const match = await prisma.match.create({
           data: {
@@ -260,7 +261,6 @@ export async function POST(
         })
 
         createdMatches.push(match)
-        i++ // Skip next pairing as we used it for team formation
       }
     }
 
