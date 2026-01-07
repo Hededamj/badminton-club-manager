@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Calendar as CalendarIcon, Users, Filter } from 'lucide-react'
+import { Plus, Calendar as CalendarIcon, Users, Filter, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { da } from 'date-fns/locale'
+import { ImportHoldsportTrainingsDialog } from '@/components/training/import-holdsport-trainings-dialog'
 
 interface Training {
   id: string
@@ -46,6 +47,7 @@ export default function TrainingsPage() {
   const [trainings, setTrainings] = useState<Training[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [showImportDialog, setShowImportDialog] = useState(false)
 
   const fetchTrainings = async () => {
     try {
@@ -94,10 +96,16 @@ export default function TrainingsPage() {
           </select>
         </div>
 
-        <Button onClick={() => router.push('/trainings/new')}>
-          <Plus className="mr-2 h-4 w-4" />
-          Opret træning
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+            <Download className="mr-2 h-4 w-4" />
+            Importer fra Holdsport
+          </Button>
+          <Button onClick={() => router.push('/trainings/new')}>
+            <Plus className="mr-2 h-4 w-4" />
+            Opret træning
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -162,6 +170,12 @@ export default function TrainingsPage() {
           ))}
         </div>
       )}
+
+      <ImportHoldsportTrainingsDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onSuccess={fetchTrainings}
+      />
     </div>
   )
 }

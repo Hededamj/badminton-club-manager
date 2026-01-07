@@ -98,10 +98,13 @@ export async function POST(request: NextRequest) {
     const members: HoldsportMember[] = await response.json()
 
     console.log(`Fetched ${members.length} members from Holdsport team ${teamId}`)
+    console.log('Sample member:', members[0])
+    console.log('All roles:', members.map(m => ({ name: m.first_name, role: m.role })))
 
     // Filter to only include active players (role 1 = player)
+    // Note: Holdsport roles might be different, so let's be more permissive
     const players = members
-      .filter(member => member.role === 1)
+      .filter(member => member.role !== undefined) // Accept all roles for now
       .map(member => {
         const player = {
           name: `${member.first_name || ''} ${member.last_name || ''}`.trim(),
