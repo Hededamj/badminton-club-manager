@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { da } from 'date-fns/locale'
+import { MatchResultDialog } from '@/components/match/match-result-dialog'
 
 interface Training {
   id: string
@@ -61,6 +62,9 @@ export default function TrainingDetailPage() {
   const [training, setTraining] = useState<Training | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [selectedMatch, setSelectedMatch] = useState<any>(null)
+  const [showResultDialog, setShowResultDialog] = useState(false)
 
   useEffect(() => {
     fetchTraining()
@@ -120,6 +124,41 @@ export default function TrainingDetailPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Der opstod en fejl')
     }
+  }
+
+  const handleGenerateMatches = async () => {
+    try {
+      setGenerating(true)
+      setError('')
+
+      const res = await fetch(`/api/trainings/${params.id}/matches`, {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Kunne ikke generere kampe')
+      }
+
+      fetchTraining()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Der opstod en fejl')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleMatchClick = (match: any) => {
+    if (!match.result) {
+      setSelectedMatch(match)
+      setShowResultDialog(true)
+    }
+  }
+
+  const handleResultSuccess = () => {
+    setShowResultDialog(false)
+    setSelectedMatch(null)
+    fetchTraining()
   }
 
   if (loading) {
@@ -304,6 +343,12 @@ export default function TrainingDetailPage() {
         </Card>
       </div>
 
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
       {training.matches.length === 0 && training.status === 'PLANNED' && (
         <Card>
           <CardContent className="pt-6">
@@ -311,15 +356,117 @@ export default function TrainingDetailPage() {
               <p className="text-muted-foreground mb-4">
                 Ingen kampe genereret endnu. Generer kampe for at starte træningen.
               </p>
-              <Button disabled>
-                Generer kampe
+              <Button onClick={handleGenerateMatches} disabled={generating}>
+                {generating ? 'Genererer kampe...' : 'Generer kampe'}
               </Button>
               <p className="text-xs text-muted-foreground mt-2">
-                Kampgenerering kommer i Phase 4
+                Algoritmen optimerer for niveaubalance, variation i partnere og modstandere
               </p>
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {training.matches.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Kampprogram</CardTitle>
+                <CardDescription>
+                  {training.matches.length} kampe genereret
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                onClick={handleGenerateMatches}
+                disabled={generating}
+              >
+                {generating ? 'Regenererer...' : 'Regenerer kampe'}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {Array.from({ length: training.courts }, (_, courtIndex) => (
+                <div key={courtIndex + 1} className="space-y-2">
+                  <h3 className="font-semibold text-lg">Bane {courtIndex + 1}</h3>
+                  <div className="space-y-2">
+                    {training.matches
+                      .filter(m => m.courtNumber === courtIndex + 1)
+                      .sort((a, b) => a.matchNumber - b.matchNumber)
+                      .map(match => {
+                        const team1 = match.matchPlayers.filter(mp => mp.team === 1)
+                        const team2 = match.matchPlayers.filter(mp => mp.team === 2)
+
+                        return (
+                          <div
+                            key={match.id}
+                            onClick={() => handleMatchClick(match)}
+                            className={`border rounded-lg p-4 space-y-2 ${
+                              !match.result
+                                ? 'cursor-pointer hover:bg-accent transition-colors'
+                                : ''
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-muted-foreground">
+                                Kamp {match.matchNumber}
+                              </span>
+                              {match.result ? (
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline">
+                                    {match.result.team1Score} - {match.result.team2Score}
+                                  </Badge>
+                                  <Badge>Afsluttet</Badge>
+                                </div>
+                              ) : (
+                                <Badge variant="secondary">Afventer resultat</Badge>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium">Hold 1</p>
+                                {team1.map(mp => (
+                                  <div key={mp.player.id} className="text-sm">
+                                    {mp.player.name} ({Math.round(mp.player.level)})
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium">Hold 2</p>
+                                {team2.map(mp => (
+                                  <div key={mp.player.id} className="text-sm">
+                                    {mp.player.name} ({Math.round(mp.player.level)})
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedMatch && (
+        <MatchResultDialog
+          open={showResultDialog}
+          onOpenChange={setShowResultDialog}
+          onSuccess={handleResultSuccess}
+          matchId={selectedMatch.id}
+          team1Players={selectedMatch.matchPlayers
+            .filter((mp: any) => mp.team === 1)
+            .map((mp: any) => mp.player)}
+          team2Players={selectedMatch.matchPlayers
+            .filter((mp: any) => mp.team === 2)
+            .map((mp: any) => mp.player)}
+        />
       )}
     </div>
   )
