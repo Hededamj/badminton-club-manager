@@ -102,40 +102,46 @@ export async function POST(
           id: p.id,
           name: p.name,
           level: p.level,
-        })) || []
+        }))
+
+        const matchData: any = {
+          trainingId: training.id,
+          courtNumber: match.court,
+          matchNumber: match.matchNumber,
+          status: 'PENDING',
+          matchPlayers: {
+            create: [
+              {
+                playerId: match.team1[0].id,
+                team: 1,
+                position: 1,
+              },
+              {
+                playerId: match.team1[1].id,
+                team: 1,
+                position: 2,
+              },
+              {
+                playerId: match.team2[0].id,
+                team: 2,
+                position: 1,
+              },
+              {
+                playerId: match.team2[1].id,
+                team: 2,
+                position: 2,
+              },
+            ],
+          },
+        }
+
+        // Only add benchedPlayers if there are any
+        if (benchedPlayersData && benchedPlayersData.length > 0) {
+          matchData.benchedPlayers = benchedPlayersData
+        }
 
         const createdMatch = await prisma.match.create({
-          data: {
-            trainingId: training.id,
-            courtNumber: match.court,
-            matchNumber: match.matchNumber,
-            status: 'PENDING',
-            benchedPlayers: benchedPlayersData.length > 0 ? benchedPlayersData : null,
-            matchPlayers: {
-              create: [
-                {
-                  playerId: match.team1[0].id,
-                  team: 1,
-                  position: 1,
-                },
-                {
-                  playerId: match.team1[1].id,
-                  team: 1,
-                  position: 2,
-                },
-                {
-                  playerId: match.team2[0].id,
-                  team: 2,
-                  position: 1,
-                },
-                {
-                  playerId: match.team2[1].id,
-                  team: 2,
-                  position: 2,
-                },
-              ],
-            },
-          },
+          data: matchData,
           include: {
             matchPlayers: {
               include: {
