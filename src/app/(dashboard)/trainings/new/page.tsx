@@ -26,7 +26,6 @@ export default function NewTrainingPage() {
   const [formData, setFormData] = useState({
     name: '',
     date: '',
-    courts: 3,
     matchesPerCourt: 3,
   })
 
@@ -151,25 +150,6 @@ export default function NewTrainingPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="courts">Antal baner *</Label>
-                <Input
-                  id="courts"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.courts}
-                  onChange={(e) =>
-                    setFormData({ ...formData, courts: parseInt(e.target.value) })
-                  }
-                  disabled={loading}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Antal baner tilgængelige til træningen (1-10)
-                </p>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="matchesPerCourt">Kampe pr. bane *</Label>
                 <Input
                   id="matchesPerCourt"
@@ -184,7 +164,7 @@ export default function NewTrainingPage() {
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  Antal kampe der skal spilles på hver bane
+                  Antal kampe der skal spilles på hver bane (6 baner tilgængelige)
                 </p>
               </div>
             </CardContent>

@@ -202,7 +202,9 @@ function scoreMatch(
   match: { team1: [Player, Player]; team2: [Player, Player] },
   partnershipHistory: PartnershipHistory[],
   oppositionHistory: OppositionHistory[],
-  recentMatches: Match[]
+  recentMatches: Match[],
+  sessionPartnerships?: Set<string>,
+  sessionOppositions?: Set<string>
 ): MatchScore {
   const team1Rating = calculateTeamRating(match.team1[0].level, match.team1[1].level)
   const team2Rating = calculateTeamRating(match.team2[0].level, match.team2[1].level)
@@ -221,9 +223,20 @@ function scoreMatch(
     match.team2[1].id,
     partnershipHistory
   )
+
+  // Check if these partnerships already happened in this session - HEAVILY penalize
+  let sessionPartnershipPenalty = 0
+  if (sessionPartnerships) {
+    const team1Key = [match.team1[0].id, match.team1[1].id].sort().join('-')
+    const team2Key = [match.team2[0].id, match.team2[1].id].sort().join('-')
+    if (sessionPartnerships.has(team1Key) || sessionPartnerships.has(team2Key)) {
+      sessionPartnershipPenalty = 100 // Massive penalty to avoid repeating partners in same session
+    }
+  }
+
   // Normalize: assume 10+ partnerships is max
   const partnershipVarietyScore =
-    Math.min((team1PartnershipCount + team2PartnershipCount) / 20, 1)
+    Math.min((team1PartnershipCount + team2PartnershipCount) / 20, 1) + sessionPartnershipPenalty
 
   // 3. Opposition variety (0 = never opposed, 1 = opposed many times)
   let totalOppositionCount = 0
@@ -232,8 +245,22 @@ function scoreMatch(
       totalOppositionCount += getOppositionCount(p1.id, p2.id, oppositionHistory)
     }
   }
+
+  // Check if these oppositions already happened in this session - HEAVILY penalize
+  let sessionOppositionPenalty = 0
+  if (sessionOppositions) {
+    for (const p1 of match.team1) {
+      for (const p2 of match.team2) {
+        const oppKey = [p1.id, p2.id].sort().join('-')
+        if (sessionOppositions.has(oppKey)) {
+          sessionOppositionPenalty += 50 // Penalty for each repeated opposition pairing
+        }
+      }
+    }
+  }
+
   // Normalize: assume 10+ oppositions is max for all 4 combinations
-  const oppositionVarietyScore = Math.min(totalOppositionCount / 40, 1)
+  const oppositionVarietyScore = Math.min(totalOppositionCount / 40, 1) + sessionOppositionPenalty
 
   // 4. Player rest (0 = all well-rested, 1 = someone just played)
   const allPlayers = [...match.team1, ...match.team2]
@@ -302,12 +329,25 @@ export function generateMatches(
   const generatedMatches: Match[] = []
   const usedPlayers = new Set<string>()
 
+  // Track partnerships and oppositions within this training session
+  const sessionPartnerships = new Set<string>()
+  const sessionOppositions = new Set<string>()
+
+  // Prefer middle courts (2-5) first, then outer courts (1, 6)
+  // For 6 courts: [2, 3, 4, 5, 1, 6]
+  const courtOrder = []
+  for (let i = 2; i <= Math.min(5, courts); i++) {
+    courtOrder.push(i)
+  }
+  if (courts >= 1) courtOrder.push(1)
+  if (courts >= 6) courtOrder.push(6)
+
   // Generate matches for each round
   for (let matchNum = 1; matchNum <= matchesPerCourt; matchNum++) {
     const roundMatches: Match[] = []
 
-    // Generate matches for all courts in this round
-    for (let court = 1; court <= courts; court++) {
+    // Generate matches for all courts in this round (using preferred order)
+    for (const court of courtOrder) {
       const availablePlayers = players.filter(p => !usedPlayers.has(p.id))
 
       if (availablePlayers.length < 4) {
@@ -325,7 +365,7 @@ export function generateMatches(
 
       // Score all possible matches
       const scoredMatches = possibleMatches.map(match =>
-        scoreMatch(match, partnershipHistory, oppositionHistory, generatedMatches)
+        scoreMatch(match, partnershipHistory, oppositionHistory, generatedMatches, sessionPartnerships, sessionOppositions)
       )
 
       // Sort by score (lower is better)
@@ -337,6 +377,19 @@ export function generateMatches(
       bestMatch.matchNumber = matchNum
 
       roundMatches.push(bestMatch)
+
+      // Track partnerships and oppositions for this session
+      const team1Key = [bestMatch.team1[0].id, bestMatch.team1[1].id].sort().join('-')
+      const team2Key = [bestMatch.team2[0].id, bestMatch.team2[1].id].sort().join('-')
+      sessionPartnerships.add(team1Key)
+      sessionPartnerships.add(team2Key)
+
+      for (const p1 of bestMatch.team1) {
+        for (const p2 of bestMatch.team2) {
+          const oppKey = [p1.id, p2.id].sort().join('-')
+          sessionOppositions.add(oppKey)
+        }
+      }
 
       // Mark players as used for this round
       bestMatch.team1.forEach(p => usedPlayers.add(p.id))
