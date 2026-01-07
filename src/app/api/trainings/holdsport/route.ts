@@ -42,15 +42,15 @@ export async function GET(request: NextRequest) {
     console.log('Auth header created (first 20 chars):', auth.substring(0, 20))
 
     // Fetch activities from Holdsport
-    // Get activities from today and 3 days forward
+    // Get activities from today and 7 days forward
     const today = new Date()
-    const threeDaysForward = new Date()
-    threeDaysForward.setDate(today.getDate() + 3)
+    const sevenDaysForward = new Date()
+    sevenDaysForward.setDate(today.getDate() + 7)
 
     const activities: HoldsportActivity[] = []
 
     // Holdsport API requires fetching activities by date
-    for (let i = 0; i <= 3; i++) {
+    for (let i = 0; i <= 7; i++) {
       const date = new Date()
       date.setDate(today.getDate() + i)
       const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD

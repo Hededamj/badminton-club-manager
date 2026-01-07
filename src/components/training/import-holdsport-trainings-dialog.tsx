@@ -111,7 +111,7 @@ export function ImportHoldsportTrainingsDialog({
       setTrainings(data.trainings)
 
       if (data.trainings.length === 0) {
-        setError('Ingen planlagte træninger fundet de næste 3 dage')
+        setError('Ingen planlagte træninger fundet de næste 7 dage')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Der opstod en fejl')
@@ -164,7 +164,7 @@ export function ImportHoldsportTrainingsDialog({
         <DialogHeader>
           <DialogTitle>Importer træninger fra Holdsport</DialogTitle>
           <DialogDescription>
-            Hent planlagte træninger fra Holdsport de næste 3 dage
+            Hent planlagte træninger fra Holdsport de næste 7 dage
           </DialogDescription>
         </DialogHeader>
 
