@@ -7,7 +7,7 @@ import { updatePlayerSchema } from '@/lib/validators/player'
 // GET /api/players/:id - Get single player
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,6 +16,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const params = await props.params
     const player = await db.player.findUnique({
       where: { id: params.id },
       include: {
@@ -46,7 +47,7 @@ export async function GET(
 // PATCH /api/players/:id - Update player
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -55,6 +56,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const params = await props.params
     const body = await req.json()
     const validatedData = updatePlayerSchema.parse(body)
 
@@ -99,7 +101,7 @@ export async function PATCH(
 // DELETE /api/players/:id - Delete player
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -107,6 +109,8 @@ export async function DELETE(
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const params = await props.params
 
     // Check if player has any matches
     const matchCount = await db.matchPlayer.count({
