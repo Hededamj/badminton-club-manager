@@ -33,6 +33,7 @@ model Player {
   phone             String?   @db.VarChar(20)
   holdsportId       String?   @unique @map("holdsport_id")
   level             Float     @default(1500) // ELO-style rating
+  gender            Gender?   // For mixed doubles
   isActive          Boolean   @default(true) @map("is_active")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
@@ -251,4 +252,9 @@ enum TournamentStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum Gender {
+  MALE
+  FEMALE
 }

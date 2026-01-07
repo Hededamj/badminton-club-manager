@@ -6,6 +6,7 @@ export const createPlayerSchema = z.object({
   phone: z.string().max(20, 'Telefonnummer må højst være 20 tegn').optional().or(z.literal('')),
   holdsportId: z.string().max(255).optional().or(z.literal('')),
   level: z.number().min(0, 'Niveau skal være mindst 0').max(5000, 'Niveau må højst være 5000').default(1500),
+  gender: z.enum(['MALE', 'FEMALE']).optional(),
   isActive: z.boolean().default(true),
 })
 

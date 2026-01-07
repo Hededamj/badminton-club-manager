@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createPlayerSchema, type CreatePlayerInput } from '@/lib/validators/player'
 
 interface AddPlayerDialogProps {
@@ -22,6 +23,7 @@ export function AddPlayerDialog({ open, onOpenChange, onSuccess }: AddPlayerDial
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm<CreatePlayerInput>({
@@ -106,6 +108,35 @@ export function AddPlayerDialog({ open, onOpenChange, onSuccess }: AddPlayerDial
             {errors.phone && (
               <p className="text-sm text-destructive">{errors.phone.message}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="gender">Køn</Label>
+            <Controller
+              name="gender"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  disabled={loading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vælg køn (valgfrit)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">Mand</SelectItem>
+                    <SelectItem value="FEMALE">Kvinde</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.gender && (
+              <p className="text-sm text-destructive">{errors.gender.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Bruges til at lave mixed doubles
+            </p>
           </div>
 
           <div className="space-y-2">
