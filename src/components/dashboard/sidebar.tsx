@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
@@ -47,9 +48,23 @@ export function Sidebar() {
   return (
     <div className="flex flex-col h-full bg-card border-r">
       <div className="p-6">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Badminton Club
-        </h1>
+        <div className="flex items-center gap-3">
+          <Image
+            src="/logo.png"
+            alt="Hareskov Badminton"
+            width={50}
+            height={50}
+            className="rounded-lg"
+          />
+          <div>
+            <h1 className="text-xl font-bold text-[#005A9C]">
+              HARESKOV
+            </h1>
+            <p className="text-sm font-semibold text-[#005A9C]">
+              BADMINTON
+            </p>
+          </div>
+        </div>
       </div>
 
       <nav className="flex-1 px-4">

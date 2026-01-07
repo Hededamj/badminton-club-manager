@@ -45,7 +45,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-2">
-          Velkommen til Badminton Club Manager
+          Velkommen til Hareskov Badminton
         </p>
       </div>
 

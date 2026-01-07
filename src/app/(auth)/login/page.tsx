@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -43,13 +44,24 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-3xl font-bold tracking-tight">
-            Badminton Club
-          </CardTitle>
-          <CardDescription className="text-base">
-            Log ind for at administrere træninger og turneringer
-          </CardDescription>
+        <CardHeader className="space-y-4">
+          <div className="flex flex-col items-center gap-4">
+            <Image
+              src="/logo.png"
+              alt="Hareskov Badminton"
+              width={100}
+              height={100}
+              className="rounded-lg"
+            />
+            <div className="text-center">
+              <CardTitle className="text-3xl font-bold text-[#005A9C]">
+                HARESKOV BADMINTON
+              </CardTitle>
+              <CardDescription className="text-base mt-2">
+                Log ind for at administrere træninger og turneringer
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
