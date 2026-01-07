@@ -12,30 +12,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { playerData } = await req.json()
+    const body = await req.json()
+    const { playerData, players: playersArray } = body
 
-    if (!playerData || typeof playerData !== 'string') {
+    // Support both old format (playerData string) and new format (players array)
+    let playersToImport: Array<{ name: string; email?: string }> = []
+
+    if (playersArray && Array.isArray(playersArray)) {
+      // New format: array of player objects
+      playersToImport = playersArray
+    } else if (playerData && typeof playerData === 'string') {
+      // Old format: tab-separated string
+      const lines = playerData.trim().split('\n')
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
+
+        const parts = line.split('\t')
+        const name = parts[0]?.trim()
+        const email = parts[1]?.trim() || undefined
+
+        if (name) {
+          playersToImport.push({ name, email })
+        }
+      }
+    } else {
       return NextResponse.json(
         { error: 'Ugyldig spillerdata' },
         { status: 400 }
       )
     }
 
-    // Parse player data (expecting format: "Name\tEmail" or "Name" per line)
-    const lines = playerData.trim().split('\n')
-    const players = []
+    const createdPlayers = []
     const errors = []
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line) continue
+    for (let i = 0; i < playersToImport.length; i++) {
+      const { name, email } = playersToImport[i]
 
-      const parts = line.split('\t')
-      const name = parts[0]?.trim()
-      const email = parts[1]?.trim() || null
-
-      if (!name) {
-        errors.push(`Linje ${i + 1}: Mangler navn`)
+      if (!name || name.length < 2) {
+        errors.push(`Spiller ${i + 1}: Mangler navn eller navn for kort`)
         continue
       }
 
@@ -69,7 +84,7 @@ export async function POST(req: NextRequest) {
           },
         })
 
-        players.push(player)
+        createdPlayers.push(player)
       } catch (error) {
         console.error(`Error creating player ${name}:`, error)
         errors.push(`${name}: Kunne ikke oprettes`)
@@ -78,9 +93,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      imported: players.length,
+      imported: createdPlayers.length,
       errors: errors.length > 0 ? errors : undefined,
-      players,
+      players: createdPlayers,
     })
   } catch (error) {
     console.error('Error importing players:', error)
