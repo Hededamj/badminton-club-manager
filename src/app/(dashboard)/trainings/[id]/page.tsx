@@ -222,6 +222,8 @@ export default function TrainingDetailPage() {
               <Button
                 variant="outline"
                 onClick={() => handleStatusChange('IN_PROGRESS')}
+                disabled={training.matches.length === 0}
+                title={training.matches.length === 0 ? 'Generer kampe før du starter træningen' : ''}
               >
                 <Play className="mr-2 h-4 w-4" />
                 Start træning

@@ -3,15 +3,25 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Upload } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Upload, Download } from 'lucide-react'
 
 interface ImportPlayersDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+}
+
+interface HoldsportTeam {
+  id: string
+  name: string
+  primary_color: string
+  secondary_color: string
+  role: number
 }
 
 export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPlayersDialogProps) {
@@ -23,6 +33,13 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
     errors?: string[]
   } | null>(null)
   const [error, setError] = useState('')
+
+  // Holdsport API state
+  const [holdsportUsername, setHoldsportUsername] = useState('')
+  const [holdsportPassword, setHoldsportPassword] = useState('')
+  const [holdsportTeams, setHoldsportTeams] = useState<HoldsportTeam[]>([])
+  const [selectedTeamId, setSelectedTeamId] = useState('')
+  const [fetchingTeams, setFetchingTeams] = useState(false)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -138,6 +155,96 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
     }
   }
 
+  const handleFetchTeams = async () => {
+    if (!holdsportUsername || !holdsportPassword) {
+      setError('Indtast venligst brugernavn og adgangskode')
+      return
+    }
+
+    try {
+      setFetchingTeams(true)
+      setError('')
+      setHoldsportTeams([])
+      setSelectedTeamId('')
+
+      const res = await fetch(
+        `/api/players/holdsport?username=${encodeURIComponent(holdsportUsername)}&password=${encodeURIComponent(holdsportPassword)}`
+      )
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Kunne ikke hente teams')
+      }
+
+      const teams: HoldsportTeam[] = await res.json()
+      setHoldsportTeams(teams)
+
+      if (teams.length === 0) {
+        setError('Ingen teams fundet')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Der opstod en fejl')
+    } finally {
+      setFetchingTeams(false)
+    }
+  }
+
+  const handleHoldsportImport = async () => {
+    if (!selectedTeamId) {
+      setError('Vælg venligst et hold')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      setResult(null)
+
+      // Fetch members from Holdsport
+      const fetchRes = await fetch('/api/players/holdsport', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: holdsportUsername,
+          password: holdsportPassword,
+          teamId: selectedTeamId,
+        }),
+      })
+
+      if (!fetchRes.ok) {
+        const errorData = await fetchRes.json()
+        throw new Error(errorData.error || 'Kunne ikke hente spillere')
+      }
+
+      const { players } = await fetchRes.json()
+
+      // Import into database
+      const importRes = await fetch('/api/players/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ players }),
+      })
+
+      if (!importRes.ok) {
+        const errorData = await importRes.json()
+        throw new Error(errorData.error || 'Import fejlede')
+      }
+
+      const data = await importRes.json()
+      setResult(data)
+
+      if (data.imported > 0) {
+        setTimeout(() => {
+          onSuccess()
+        }, 2000)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Der opstod en fejl')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -148,11 +255,85 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="paste" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="holdsport" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="holdsport">Holdsport API</TabsTrigger>
             <TabsTrigger value="paste">Kopier & Indsæt</TabsTrigger>
             <TabsTrigger value="upload">Upload CSV</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="holdsport" className="space-y-4">
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="holdsportUsername">Holdsport Brugernavn</Label>
+                  <Input
+                    id="holdsportUsername"
+                    value={holdsportUsername}
+                    onChange={(e) => setHoldsportUsername(e.target.value)}
+                    placeholder="dit-brugernavn"
+                    disabled={loading || fetchingTeams}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="holdsportPassword">Holdsport Adgangskode</Label>
+                  <Input
+                    id="holdsportPassword"
+                    type="password"
+                    value={holdsportPassword}
+                    onChange={(e) => setHoldsportPassword(e.target.value)}
+                    placeholder="••••••••"
+                    disabled={loading || fetchingTeams}
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={handleFetchTeams}
+                disabled={loading || fetchingTeams || !holdsportUsername || !holdsportPassword}
+                className="w-full"
+                variant="outline"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {fetchingTeams ? 'Henter teams...' : 'Hent mine teams'}
+              </Button>
+
+              {holdsportTeams.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="teamSelect">Vælg hold</Label>
+                  <Select
+                    value={selectedTeamId}
+                    onValueChange={setSelectedTeamId}
+                    disabled={loading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vælg et hold" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {holdsportTeams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Kun aktive spillere (role = player) bliver importeret
+                  </p>
+                </div>
+              )}
+
+              {holdsportTeams.length > 0 && (
+                <Button
+                  onClick={handleHoldsportImport}
+                  disabled={loading || !selectedTeamId}
+                  className="w-full"
+                >
+                  {loading ? 'Importerer spillere...' : 'Importer spillere fra Holdsport'}
+                </Button>
+              )}
+            </div>
+          </TabsContent>
 
           <TabsContent value="paste" className="space-y-4">
             <div className="space-y-2">
@@ -261,6 +442,10 @@ Bent Hansen,bent@mail.dk
             onClick={() => {
               setPlayerData('')
               setSelectedFile(null)
+              setHoldsportUsername('')
+              setHoldsportPassword('')
+              setHoldsportTeams([])
+              setSelectedTeamId('')
               setResult(null)
               setError('')
               onOpenChange(false)
