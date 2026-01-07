@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Calendar, Users, Trash2, Play, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Calendar, Users, Trash2, Play, CheckCircle2, Grid3x3, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { da } from 'date-fns/locale'
 import { MatchResultDialog } from '@/components/match/match-result-dialog'
+import { CourtView } from '@/components/match/court-view'
 
 interface Training {
   id: string
@@ -71,6 +72,7 @@ export default function TrainingDetailPage() {
   const [generating, setGenerating] = useState(false)
   const [selectedMatch, setSelectedMatch] = useState<any>(null)
   const [showResultDialog, setShowResultDialog] = useState(false)
+  const [viewMode, setViewMode] = useState<'graphic' | 'list'>('graphic')
 
   useEffect(() => {
     fetchTraining()
@@ -385,58 +387,146 @@ export default function TrainingDetailPage() {
                   {training.matches.length} kampe genereret
                 </CardDescription>
               </div>
-              <Button
-                variant="outline"
-                onClick={handleGenerateMatches}
-                disabled={generating}
-              >
-                {generating ? 'Regenererer...' : 'Regenerer kampe'}
-              </Button>
+              <div className="flex gap-2">
+                <div className="flex rounded-lg border border-border">
+                  <Button
+                    variant={viewMode === 'graphic' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('graphic')}
+                    className="rounded-r-none"
+                  >
+                    <Grid3x3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="rounded-l-none"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateMatches}
+                  disabled={generating}
+                >
+                  {generating ? 'Regenererer...' : 'Regenerer kampe'}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {Array.from({ length: training.matchesPerCourt || 3 }, (_, matchIndex) => {
-                // Get matches for this match number (round)
-                const roundMatches = training.matches
-                  .filter(m => m.matchNumber === matchIndex + 1)
-                  .sort((a, b) => a.courtNumber - b.courtNumber)
+            {viewMode === 'graphic' ? (
+              // Graphic view with court visualization
+              <div className="space-y-6">
+                {Array.from({ length: training.matchesPerCourt || 3 }, (_, matchIndex) => {
+                  const roundMatches = training.matches
+                    .filter(m => m.matchNumber === matchIndex + 1)
+                    .sort((a, b) => a.courtNumber - b.courtNumber)
 
-                // Find all benched players for this round
-                const benchedPlayersForRound = roundMatches
-                  .flatMap(m => m.benchedPlayers || [])
-                  .filter((player, index, self) =>
-                    self.findIndex(p => p.id === player.id) === index
-                  ) // Remove duplicates
+                  const benchedPlayersForRound = roundMatches
+                    .flatMap(m => m.benchedPlayers || [])
+                    .filter((player, index, self) =>
+                      self.findIndex(p => p.id === player.id) === index
+                    )
 
-                return (
-                  <div key={matchIndex + 1} className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-lg">Kamp {matchIndex + 1}</h3>
-                      {benchedPlayersForRound.length > 0 && (
-                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                          {benchedPlayersForRound.length} sidder over
-                        </Badge>
-                      )}
-                    </div>
-
-                    {benchedPlayersForRound.length > 0 && (
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
-                        <p className="text-sm font-medium text-orange-900">
-                          Spillere der sidder over i denne runde:
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {benchedPlayersForRound.map(player => (
-                            <Badge key={player.id} variant="secondary" className="bg-white">
-                              {player.name} ({Math.round(player.level)})
-                            </Badge>
-                          ))}
-                        </div>
+                  return (
+                    <div key={matchIndex + 1} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-lg">Kamp {matchIndex + 1}</h3>
+                        {benchedPlayersForRound.length > 0 && (
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                            {benchedPlayersForRound.length} sidder over
+                          </Badge>
+                        )}
                       </div>
-                    )}
 
-                    <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                      {roundMatches.map(match => {
+                      {benchedPlayersForRound.length > 0 && (
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+                          <p className="text-sm font-medium text-orange-900">
+                            Spillere der sidder over i denne runde:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {benchedPlayersForRound.map(player => (
+                              <Badge key={player.id} variant="secondary" className="bg-white">
+                                {player.name} ({Math.round(player.level)})
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {roundMatches.map(match => {
+                          const team1 = match.matchPlayers.filter(mp => mp.team === 1).map(mp => mp.player)
+                          const team2 = match.matchPlayers.filter(mp => mp.team === 2).map(mp => mp.player)
+
+                          return (
+                            <div
+                              key={match.id}
+                              onClick={() => handleMatchClick(match)}
+                              className={`${
+                                !match.result ? 'cursor-pointer' : ''
+                              }`}
+                            >
+                              <CourtView
+                                team1Players={team1}
+                                team2Players={team2}
+                                courtNumber={match.courtNumber}
+                                result={match.result}
+                                compact={false}
+                              />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              // List view (original)
+              <div className="space-y-6">
+                {Array.from({ length: training.matchesPerCourt || 3 }, (_, matchIndex) => {
+                  const roundMatches = training.matches
+                    .filter(m => m.matchNumber === matchIndex + 1)
+                    .sort((a, b) => a.courtNumber - b.courtNumber)
+
+                  const benchedPlayersForRound = roundMatches
+                    .flatMap(m => m.benchedPlayers || [])
+                    .filter((player, index, self) =>
+                      self.findIndex(p => p.id === player.id) === index
+                    )
+
+                  return (
+                    <div key={matchIndex + 1} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-lg">Kamp {matchIndex + 1}</h3>
+                        {benchedPlayersForRound.length > 0 && (
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                            {benchedPlayersForRound.length} sidder over
+                          </Badge>
+                        )}
+                      </div>
+
+                      {benchedPlayersForRound.length > 0 && (
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+                          <p className="text-sm font-medium text-orange-900">
+                            Spillere der sidder over i denne runde:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {benchedPlayersForRound.map(player => (
+                              <Badge key={player.id} variant="secondary" className="bg-white">
+                                {player.name} ({Math.round(player.level)})
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                        {roundMatches.map(match => {
                         const team1 = match.matchPlayers.filter(mp => mp.team === 1)
                         const team2 = match.matchPlayers.filter(mp => mp.team === 2)
 
@@ -491,7 +581,8 @@ export default function TrainingDetailPage() {
                   </div>
                 )
               })}
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
