@@ -1,0 +1,253 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  role          UserRole  @default(PLAYER)
+  playerId      String?   @unique @map("player_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  player        Player?   @relation(fields: [playerId], references: [id])
+
+  @@map("users")
+}
+
+// Player model
+model Player {
+  id                String    @id @default(uuid())
+  name              String    @db.VarChar(255)
+  email             String?   @db.VarChar(255)
+  phone             String?   @db.VarChar(20)
+  holdsportId       String?   @unique @map("holdsport_id")
+  level             Float     @default(1500) // ELO-style rating
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user              User?
+  trainingPlayers   TrainingPlayer[]
+  matchPlayers      MatchPlayer[]
+  statistics        PlayerStatistics?
+  partnershipsAsPlayer1 Partnership[] @relation("Player1Partnerships")
+  partnershipsAsPlayer2 Partnership[] @relation("Player2Partnerships")
+  oppositionsAsPlayer1  Opposition[]  @relation("Player1Oppositions")
+  oppositionsAsPlayer2  Opposition[]  @relation("Player2Oppositions")
+
+  @@index([level])
+  @@index([isActive])
+  @@map("players")
+}
+
+// Player statistics (aggregated data)
+model PlayerStatistics {
+  id                    String   @id @default(uuid())
+  playerId              String   @unique @map("player_id")
+  totalMatches          Int      @default(0) @map("total_matches")
+  wins                  Int      @default(0)
+  losses                Int      @default(0)
+  winRate               Float    @default(0) @map("win_rate")
+  currentStreak         Int      @default(0) @map("current_streak")
+  longestWinStreak      Int      @default(0) @map("longest_win_streak")
+  averagePartnerLevel   Float?   @map("average_partner_level")
+  averageOpponentLevel  Float?   @map("average_opponent_level")
+  lastUpdated           DateTime @updatedAt @map("last_updated")
+
+  player                Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@map("player_statistics")
+}
+
+// Training session
+model Training {
+  id              String          @id @default(uuid())
+  name            String          @db.VarChar(255)
+  date            DateTime        @db.Date
+  startTime       DateTime?       @map("start_time")
+  endTime         DateTime?       @map("end_time")
+  courts          Int             @default(6) // Number of courts available
+  matchesPerCourt Int             @default(3) @map("matches_per_court")
+  status          TrainingStatus  @default(PLANNED)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  trainingPlayers TrainingPlayer[]
+  matches         Match[]
+
+  @@index([date])
+  @@index([status])
+  @@map("trainings")
+}
+
+// Junction table: Training <-> Player
+model TrainingPlayer {
+  id          String   @id @default(uuid())
+  trainingId  String   @map("training_id")
+  playerId    String   @map("player_id")
+  attending   Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  training    Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([trainingId, playerId])
+  @@index([trainingId])
+  @@index([playerId])
+  @@map("training_players")
+}
+
+// Match
+model Match {
+  id           String      @id @default(uuid())
+  trainingId   String?     @map("training_id")
+  tournamentId String?     @map("tournament_id")
+  courtNumber  Int         @map("court_number")
+  matchNumber  Int         @map("match_number") // Match 1, 2, 3 on each court
+  status       MatchStatus @default(PENDING)
+  completedAt  DateTime?   @map("completed_at")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  training     Training?      @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  tournament   Tournament?    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  matchPlayers MatchPlayer[]
+  result       MatchResult?
+
+  @@index([trainingId])
+  @@index([tournamentId])
+  @@index([courtNumber])
+  @@map("matches")
+}
+
+// Match player (4 players per match)
+model MatchPlayer {
+  id       String  @id @default(uuid())
+  matchId  String  @map("match_id")
+  playerId String  @map("player_id")
+  team     Int     // 1 or 2
+  position Int     // 1 or 2 (left/right)
+
+  match    Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player   Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, playerId])
+  @@index([matchId])
+  @@index([playerId])
+  @@map("match_players")
+}
+
+// Match result
+model MatchResult {
+  id            String   @id @default(uuid())
+  matchId       String   @unique @map("match_id")
+  team1Score    Int      @map("team1_score")
+  team2Score    Int      @map("team2_score")
+  winningTeam   Int      @map("winning_team") // 1 or 2
+  levelChange   Json?    @map("level_change") // {playerId: change}
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  match         Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@map("match_results")
+}
+
+// Partnership history (for variety tracking)
+model Partnership {
+  id              String   @id @default(uuid())
+  player1Id       String   @map("player1_id")
+  player2Id       String   @map("player2_id")
+  timesPartnered  Int      @default(1) @map("times_partnered")
+  wins            Int      @default(0)
+  losses          Int      @default(0)
+  lastPartnered   DateTime @map("last_partnered")
+
+  player1         Player   @relation("Player1Partnerships", fields: [player1Id], references: [id], onDelete: Cascade)
+  player2         Player   @relation("Player2Partnerships", fields: [player2Id], references: [id], onDelete: Cascade)
+
+  @@unique([player1Id, player2Id])
+  @@index([player1Id])
+  @@index([player2Id])
+  @@map("partnerships")
+}
+
+// Opposition history (for variety tracking)
+model Opposition {
+  id            String   @id @default(uuid())
+  player1Id     String   @map("player1_id")
+  player2Id     String   @map("player2_id")
+  timesOpposed  Int      @default(1) @map("times_opposed")
+  player1Wins   Int      @default(0) @map("player1_wins")
+  player2Wins   Int      @default(0) @map("player2_wins")
+  lastOpposed   DateTime @map("last_opposed")
+
+  player1       Player   @relation("Player1Oppositions", fields: [player1Id], references: [id], onDelete: Cascade)
+  player2       Player   @relation("Player2Oppositions", fields: [player2Id], references: [id], onDelete: Cascade)
+
+  @@unique([player1Id, player2Id])
+  @@index([player1Id])
+  @@index([player2Id])
+  @@map("oppositions")
+}
+
+// Tournament
+model Tournament {
+  id          String           @id @default(uuid())
+  name        String           @db.VarChar(255)
+  startDate   DateTime         @map("start_date") @db.Date
+  endDate     DateTime?        @map("end_date") @db.Date
+  format      TournamentFormat
+  status      TournamentStatus @default(PLANNED)
+  description String?          @db.Text
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  matches     Match[]
+
+  @@index([status])
+  @@map("tournaments")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  PLAYER
+}
+
+enum TrainingStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MatchStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TournamentFormat {
+  SINGLE_ELIMINATION
+  DOUBLE_ELIMINATION
+  ROUND_ROBIN
+  SWISS
+}
+
+enum TournamentStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
