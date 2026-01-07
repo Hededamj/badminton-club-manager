@@ -457,7 +457,7 @@ export default function TrainingDetailPage() {
                         </div>
                       )}
 
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {roundMatches.map(match => {
                           const team1 = match.matchPlayers.filter(mp => mp.team === 1).map(mp => mp.player)
                           const team2 = match.matchPlayers.filter(mp => mp.team === 2).map(mp => mp.player)
@@ -525,7 +525,7 @@ export default function TrainingDetailPage() {
                         </div>
                       )}
 
-                      <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {roundMatches.map(match => {
                         const team1 = match.matchPlayers.filter(mp => mp.team === 1)
                         const team2 = match.matchPlayers.filter(mp => mp.team === 2)
@@ -593,6 +593,7 @@ export default function TrainingDetailPage() {
           onOpenChange={setShowResultDialog}
           onSuccess={handleResultSuccess}
           matchId={selectedMatch.id}
+          courtNumber={selectedMatch.courtNumber}
           team1Players={selectedMatch.matchPlayers
             .filter((mp: any) => mp.team === 1)
             .map((mp: any) => mp.player)}

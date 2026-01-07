@@ -3,8 +3,8 @@
 import Image from 'next/image'
 
 interface CourtViewProps {
-  team1Players: Array<{ name: string; level: number }>
-  team2Players: Array<{ name: string; level: number }>
+  team1Players: Array<{ name: string; level: number; gender?: 'MALE' | 'FEMALE' | null }>
+  team2Players: Array<{ name: string; level: number; gender?: 'MALE' | 'FEMALE' | null }>
   courtNumber: number
   result?: {
     team1Score: number
@@ -14,10 +14,30 @@ interface CourtViewProps {
   compact?: boolean
 }
 
+// Determine match type based on players' genders
+function getMatchType(team1Players: any[], team2Players: any[]): { type: 'HD' | 'DD' | 'MD' | null; color: string } {
+  const allPlayers = [...team1Players, ...team2Players]
+  const genders = allPlayers.map(p => p.gender).filter(Boolean)
+
+  if (genders.length < 4) return { type: null, color: '#64748b' } // Unknown
+
+  const maleCount = genders.filter(g => g === 'MALE').length
+  const femaleCount = genders.filter(g => g === 'FEMALE').length
+
+  if (maleCount === 4) return { type: 'HD', color: '#3b82f6' } // Blue for men's doubles
+  if (femaleCount === 4) return { type: 'DD', color: '#ec4899' } // Pink for women's doubles
+  if (maleCount === 2 && femaleCount === 2) return { type: 'MD', color: '#8b5cf6' } // Purple for mixed doubles
+
+  return { type: null, color: '#64748b' }
+}
+
 export function CourtView({ team1Players, team2Players, courtNumber, result, compact = false }: CourtViewProps) {
+  const matchTypeInfo = getMatchType(team1Players, team2Players)
+  const width = compact ? 180 : 220 // Reduced from 210/300
+
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="relative rounded-lg overflow-hidden border-2 border-border shadow-lg" style={{ width: compact ? '210px' : '300px' }}>
+      <div className="relative rounded-lg overflow-hidden border-2 border-border shadow-lg" style={{ width: `${width}px` }}>
         {/* Badminton court image */}
         <Image
           src="/assets/badmintonbane.jpg"
@@ -29,22 +49,32 @@ export function CourtView({ team1Players, team2Players, courtNumber, result, com
         />
 
         {/* Court number badge */}
-        <div className="absolute top-2 right-2 bg-slate-900/90 text-white px-3 py-1 rounded-full font-bold text-sm">
+        <div className="absolute top-2 right-2 bg-slate-900/90 text-white px-2 py-0.5 rounded-full font-bold text-xs">
           Bane {courtNumber}
         </div>
+
+        {/* Match type badge in center */}
+        {matchTypeInfo.type && (
+          <div
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white px-4 py-2 rounded-lg font-bold text-lg shadow-xl border-2 border-white/30"
+            style={{ backgroundColor: matchTypeInfo.color }}
+          >
+            {matchTypeInfo.type}
+          </div>
+        )}
 
         {/* Team 1 Players - Top half (blue) */}
         {team1Players.length >= 1 && (
           <div
             className="absolute flex items-center justify-center"
             style={{
-              left: compact ? '25%' : '25%',
-              top: compact ? '20%' : '20%',
+              left: '25%',
+              top: '20%',
               transform: 'translate(-50%, -50%)',
             }}
           >
-            <div className="bg-blue-500 text-white px-3 py-1.5 rounded-full shadow-lg border-2 border-blue-700 font-semibold text-xs whitespace-nowrap">
-              {team1Players[0].name.split(' ')[0].substring(0, compact ? 6 : 8)}
+            <div className="bg-blue-500 text-white px-2 py-1 rounded-full shadow-lg border-2 border-blue-700 font-semibold text-[10px] whitespace-nowrap">
+              {team1Players[0].name.split(' ')[0].substring(0, 5)}
             </div>
           </div>
         )}
@@ -53,13 +83,13 @@ export function CourtView({ team1Players, team2Players, courtNumber, result, com
           <div
             className="absolute flex items-center justify-center"
             style={{
-              left: compact ? '75%' : '75%',
-              top: compact ? '20%' : '20%',
+              left: '75%',
+              top: '20%',
               transform: 'translate(-50%, -50%)',
             }}
           >
-            <div className="bg-blue-500 text-white px-3 py-1.5 rounded-full shadow-lg border-2 border-blue-700 font-semibold text-xs whitespace-nowrap">
-              {team1Players[1].name.split(' ')[0].substring(0, compact ? 6 : 8)}
+            <div className="bg-blue-500 text-white px-2 py-1 rounded-full shadow-lg border-2 border-blue-700 font-semibold text-[10px] whitespace-nowrap">
+              {team1Players[1].name.split(' ')[0].substring(0, 5)}
             </div>
           </div>
         )}
@@ -69,13 +99,13 @@ export function CourtView({ team1Players, team2Players, courtNumber, result, com
           <div
             className="absolute flex items-center justify-center"
             style={{
-              left: compact ? '25%' : '25%',
-              top: compact ? '80%' : '80%',
+              left: '25%',
+              top: '80%',
               transform: 'translate(-50%, -50%)',
             }}
           >
-            <div className="bg-red-500 text-white px-3 py-1.5 rounded-full shadow-lg border-2 border-red-700 font-semibold text-xs whitespace-nowrap">
-              {team2Players[0].name.split(' ')[0].substring(0, compact ? 6 : 8)}
+            <div className="bg-red-500 text-white px-2 py-1 rounded-full shadow-lg border-2 border-red-700 font-semibold text-[10px] whitespace-nowrap">
+              {team2Players[0].name.split(' ')[0].substring(0, 5)}
             </div>
           </div>
         )}
@@ -84,13 +114,13 @@ export function CourtView({ team1Players, team2Players, courtNumber, result, com
           <div
             className="absolute flex items-center justify-center"
             style={{
-              left: compact ? '75%' : '75%',
-              top: compact ? '80%' : '80%',
+              left: '75%',
+              top: '80%',
               transform: 'translate(-50%, -50%)',
             }}
           >
-            <div className="bg-red-500 text-white px-3 py-1.5 rounded-full shadow-lg border-2 border-red-700 font-semibold text-xs whitespace-nowrap">
-              {team2Players[1].name.split(' ')[0].substring(0, compact ? 6 : 8)}
+            <div className="bg-red-500 text-white px-2 py-1 rounded-full shadow-lg border-2 border-red-700 font-semibold text-[10px] whitespace-nowrap">
+              {team2Players[1].name.split(' ')[0].substring(0, 5)}
             </div>
           </div>
         )}
