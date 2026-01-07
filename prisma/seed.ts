@@ -6,11 +6,19 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Seeding database...')
 
-  // Create admin player
-  const adminPlayer = await prisma.player.upsert({
+  // Check if admin already exists
+  const existingAdmin = await prisma.user.findUnique({
     where: { email: 'admin@badminton.dk' },
-    update: {},
-    create: {
+  })
+
+  if (existingAdmin) {
+    console.log('ℹ️  Admin user already exists, skipping seed')
+    return
+  }
+
+  // Create admin player
+  const adminPlayer = await prisma.player.create({
+    data: {
       name: 'Admin',
       email: 'admin@badminton.dk',
       level: 1500,
@@ -23,10 +31,8 @@ async function main() {
   // Create admin user
   const passwordHash = await hash('admin123', 10)
 
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@badminton.dk' },
-    update: {},
-    create: {
+  const adminUser = await prisma.user.create({
+    data: {
       email: 'admin@badminton.dk',
       passwordHash: passwordHash,
       role: 'ADMIN',
@@ -41,10 +47,8 @@ async function main() {
   console.log('\n⚠️  Remember to change the password after first login!\n')
 
   // Create player statistics for admin
-  await prisma.playerStatistics.upsert({
-    where: { playerId: adminPlayer.id },
-    update: {},
-    create: {
+  await prisma.playerStatistics.create({
+    data: {
       playerId: adminPlayer.id,
     },
   })
@@ -60,19 +64,15 @@ async function main() {
   ]
 
   for (const playerData of testPlayers) {
-    const player = await prisma.player.upsert({
-      where: { email: playerData.email },
-      update: {},
-      create: {
+    const player = await prisma.player.create({
+      data: {
         ...playerData,
         isActive: true,
       },
     })
 
-    await prisma.playerStatistics.upsert({
-      where: { playerId: player.id },
-      update: {},
-      create: {
+    await prisma.playerStatistics.create({
+      data: {
         playerId: player.id,
       },
     })

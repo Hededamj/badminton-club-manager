@@ -29,7 +29,7 @@ model User {
 model Player {
   id                String    @id @default(uuid())
   name              String    @db.VarChar(255)
-  email             String?   @db.VarChar(255)
+  email             String?   @unique @db.VarChar(255)
   phone             String?   @db.VarChar(20)
   holdsportId       String?   @unique @map("holdsport_id")
   level             Float     @default(1500) // ELO-style rating
