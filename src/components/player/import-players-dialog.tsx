@@ -200,7 +200,11 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
       setError('')
       setResult(null)
 
-      // Fetch members from Holdsport
+      // Get selected team name
+      const selectedTeam = holdsportTeams.find(t => t.id === selectedTeamId)
+      const teamName = selectedTeam?.name || 'Unavngivet hold'
+
+      // Import team and members from Holdsport (creates team + players + associations in one call)
       const fetchRes = await fetch('/api/players/holdsport', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -208,32 +212,27 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
           username: holdsportUsername,
           password: holdsportPassword,
           teamId: selectedTeamId,
+          teamName,
         }),
       })
 
       if (!fetchRes.ok) {
         const errorData = await fetchRes.json()
-        throw new Error(errorData.error || 'Kunne ikke hente spillere')
+        throw new Error(errorData.error || 'Kunne ikke importere hold og spillere')
       }
 
-      const { players } = await fetchRes.json()
+      const data = await fetchRes.json()
 
-      // Import into database
-      const importRes = await fetch('/api/players/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ players }),
+      // Set result - the API already imported to database
+      setResult({
+        imported: data.imported,
+        updated: data.updated,
+        skipped: data.skipped,
+        duplicates: 0,
+        errors: [],
       })
 
-      if (!importRes.ok) {
-        const errorData = await importRes.json()
-        throw new Error(errorData.error || 'Import fejlede')
-      }
-
-      const data = await importRes.json()
-      setResult(data)
-
-      if (data.imported > 0) {
+      if (data.imported > 0 || data.updated > 0) {
         setTimeout(() => {
           onSuccess()
         }, 2000)

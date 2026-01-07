@@ -25,6 +25,38 @@ model User {
   @@map("users")
 }
 
+// Team model (from Holdsport)
+model Team {
+  id              String    @id @default(uuid())
+  name            String    @db.VarChar(255)
+  holdsportId     String?   @unique @map("holdsport_id")
+  description     String?   @db.Text
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  teamPlayers     TeamPlayer[]
+
+  @@index([isActive])
+  @@map("teams")
+}
+
+// Junction table: Team <-> Player
+model TeamPlayer {
+  id        String   @id @default(uuid())
+  teamId    String   @map("team_id")
+  playerId  String   @map("player_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, playerId])
+  @@index([teamId])
+  @@index([playerId])
+  @@map("team_players")
+}
+
 // Player model
 model Player {
   id                String    @id @default(uuid())
@@ -39,6 +71,7 @@ model Player {
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
   user              User?
+  teamPlayers       TeamPlayer[]
   trainingPlayers   TrainingPlayer[]
   tournamentPlayers TournamentPlayer[]
   matchPlayers      MatchPlayer[]
