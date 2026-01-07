@@ -30,6 +30,9 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [result, setResult] = useState<{
     imported: number
+    updated?: number
+    skipped?: number
+    duplicates?: number
     errors?: string[]
   } | null>(null)
   const [error, setError] = useState('')
@@ -414,6 +417,8 @@ Bent Hansen,bent@mail.dk
           <div className="rounded-md bg-primary/10 p-4 space-y-2">
             <p className="font-medium text-primary">
               ✅ Importeret {result.imported} {result.imported === 1 ? 'spiller' : 'spillere'}
+              {result.updated ? `, opdateret ${result.updated}` : ''}
+              {result.skipped ? `, sprunget over ${result.skipped}` : ''}
             </p>
             {result.errors && result.errors.length > 0 && (
               <div className="space-y-1">
