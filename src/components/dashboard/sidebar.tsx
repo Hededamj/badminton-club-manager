@@ -21,22 +21,22 @@ const navItems = [
   },
   {
     title: 'Spillere',
-    href: '/dashboard/players',
+    href: '/players',
     icon: Users
   },
   {
     title: 'Træninger',
-    href: '/dashboard/trainings',
+    href: '/trainings',
     icon: Calendar
   },
   {
     title: 'Turneringer',
-    href: '/dashboard/tournaments',
+    href: '/tournaments',
     icon: Trophy
   },
   {
     title: 'Statistik',
-    href: '/dashboard/statistics',
+    href: '/statistics',
     icon: BarChart3
   }
 ]
