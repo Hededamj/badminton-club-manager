@@ -16,7 +16,15 @@ export async function POST(req: NextRequest) {
     const { playerData, players: playersArray } = body
 
     // Support both old format (playerData string) and new format (players array)
-    let playersToImport: Array<{ name: string; email?: string }> = []
+    let playersToImport: Array<{
+      name: string
+      email?: string
+      phone?: string
+      holdsportId?: string
+      level?: number
+      gender?: 'MALE' | 'FEMALE'
+      isActive?: boolean
+    }> = []
 
     if (playersArray && Array.isArray(playersArray)) {
       // New format: array of player objects
@@ -47,7 +55,8 @@ export async function POST(req: NextRequest) {
     const errors = []
 
     for (let i = 0; i < playersToImport.length; i++) {
-      const { name, email } = playersToImport[i]
+      const playerData = playersToImport[i]
+      const { name, email, phone, holdsportId, level, gender, isActive } = playerData
 
       if (!name || name.length < 2) {
         errors.push(`Spiller ${i + 1}: Mangler navn eller navn for kort`)
@@ -55,26 +64,40 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        // Check if player already exists by email
+        // Check if player already exists by email or holdsportId
+        let existing = null
+
         if (email) {
-          const existing = await db.player.findUnique({
+          existing = await db.player.findUnique({
             where: { email },
           })
-
-          if (existing) {
-            errors.push(`${name} (${email}) findes allerede`)
-            continue
-          }
         }
 
-        // Create player
+        if (!existing && holdsportId) {
+          existing = await db.player.findUnique({
+            where: { holdsportId },
+          })
+        }
+
+        if (existing) {
+          errors.push(`${name} findes allerede i systemet`)
+          continue
+        }
+
+        // Create player with all fields
+        const createData: any = {
+          name,
+          level: level || 1500,
+          isActive: isActive ?? true,
+        }
+
+        if (email && email.trim()) createData.email = email
+        if (phone && phone.trim()) createData.phone = phone
+        if (holdsportId && holdsportId.trim()) createData.holdsportId = holdsportId
+        if (gender) createData.gender = gender
+
         const player = await db.player.create({
-          data: {
-            name,
-            email,
-            level: 1500, // Default level
-            isActive: true,
-          },
+          data: createData,
         })
 
         // Create player statistics
@@ -85,11 +108,14 @@ export async function POST(req: NextRequest) {
         })
 
         createdPlayers.push(player)
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Error creating player ${name}:`, error)
-        errors.push(`${name}: Kunne ikke oprettes`)
+        const errorMessage = error.message || 'Ukendt fejl'
+        errors.push(`${name}: Kunne ikke oprettes (${errorMessage})`)
       }
     }
+
+    console.log(`Import completed: ${createdPlayers.length} created, ${errors.length} errors`)
 
     return NextResponse.json({
       success: true,

@@ -97,17 +97,25 @@ export async function POST(request: NextRequest) {
 
     const members: HoldsportMember[] = await response.json()
 
+    console.log(`Fetched ${members.length} members from Holdsport team ${teamId}`)
+
     // Filter to only include active players (role 1 = player)
     const players = members
       .filter(member => member.role === 1)
-      .map(member => ({
-        name: `${member.first_name} ${member.last_name}`.trim(),
-        email: member.email || '',
-        phone: member.mobile || '',
-        holdsportId: member.id,
-        level: 1500,
-        isActive: true,
-      }))
+      .map(member => {
+        const player = {
+          name: `${member.first_name || ''} ${member.last_name || ''}`.trim(),
+          email: member.email && member.email.trim() ? member.email : undefined,
+          phone: member.mobile && member.mobile.trim() ? member.mobile : undefined,
+          holdsportId: member.id,
+          level: 1500,
+          isActive: true,
+        }
+        return player
+      })
+      .filter(player => player.name.length >= 2) // Ensure valid names
+
+    console.log(`Filtered to ${players.length} active players`)
 
     return NextResponse.json({
       players,
