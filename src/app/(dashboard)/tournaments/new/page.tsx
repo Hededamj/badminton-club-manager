@@ -64,7 +64,7 @@ export default function NewTournamentPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -74,8 +74,8 @@ export default function NewTournamentPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Ny Turnering</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">Ny Turnering</h1>
+          <p className="text-muted-foreground mt-2 text-sm md:text-base">
             Opret en ny turnering for klubben
           </p>
         </div>
@@ -147,9 +147,71 @@ export default function NewTournamentPage() {
                   <SelectItem value="SWISS">Swiss</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Vælg hvordan turneringen skal afvikles
-              </p>
+            </div>
+
+            {/* Tournament format descriptions */}
+            <div className="space-y-3">
+              {formData.format === 'SINGLE_ELIMINATION' && (
+                <div className="rounded-lg border bg-blue-50 border-blue-200 p-3 md:p-4">
+                  <h3 className="font-semibold text-blue-900 mb-2 text-sm md:text-base">Single Elimination</h3>
+                  <p className="text-xs md:text-sm text-blue-800 mb-2">
+                    Klassisk cup-turnering hvor spillere slås ud ved nederlag.
+                  </p>
+                  <ul className="text-xs md:text-sm text-blue-700 space-y-1 list-disc list-inside">
+                    <li>Tab én kamp = ude af turneringen</li>
+                    <li>Vindere går videre til næste runde</li>
+                    <li>Hurtig afvikling - færrest kampe</li>
+                    <li>Klar struktur: Første runde → Kvartfinale → Semifinale → Finale</li>
+                  </ul>
+                </div>
+              )}
+
+              {formData.format === 'DOUBLE_ELIMINATION' && (
+                <div className="rounded-lg border bg-purple-50 border-purple-200 p-3 md:p-4">
+                  <h3 className="font-semibold text-purple-900 mb-2 text-sm md:text-base">Double Elimination</h3>
+                  <p className="text-xs md:text-sm text-purple-800 mb-2">
+                    To-sporet turnering hvor man får en ekstra chance.
+                  </p>
+                  <ul className="text-xs md:text-sm text-purple-700 space-y-1 list-disc list-inside">
+                    <li>Spillere skal tabe 2 kampe for at være ude</li>
+                    <li>Winners bracket (aldrig tabt) og Losers bracket (tabt én gang)</li>
+                    <li>Mere retfærdig - ingen slås ud af en enkelt dårlig kamp</li>
+                    <li>Længere turneringstid end Single Elimination</li>
+                  </ul>
+                </div>
+              )}
+
+              {formData.format === 'ROUND_ROBIN' && (
+                <div className="rounded-lg border bg-green-50 border-green-200 p-3 md:p-4">
+                  <h3 className="font-semibold text-green-900 mb-2 text-sm md:text-base">Round Robin</h3>
+                  <p className="text-xs md:text-sm text-green-800 mb-2">
+                    Alle spillere møder forskellige modstandere og partnere.
+                  </p>
+                  <ul className="text-xs md:text-sm text-green-700 space-y-1 list-disc list-inside">
+                    <li>Intelligent matchmaking sikrer variation i partnere og modstandere</li>
+                    <li>Alle spillere får lige mange kampe (typisk 6-8 kampe)</li>
+                    <li>Point tildeles efter sejre - vindere kåres på samlet pointtal</li>
+                    <li>Ideel til sociale turneringer hvor alle skal spille meget</li>
+                    <li>Kan håndtere mange spillere (systemet laver max 200 kampe)</li>
+                  </ul>
+                </div>
+              )}
+
+              {formData.format === 'SWISS' && (
+                <div className="rounded-lg border bg-orange-50 border-orange-200 p-3 md:p-4">
+                  <h3 className="font-semibold text-orange-900 mb-2 text-sm md:text-base">Swiss System</h3>
+                  <p className="text-xs md:text-sm text-orange-800 mb-2">
+                    Spillere matches efter aktuel placering i et fast antal runder.
+                  </p>
+                  <ul className="text-xs md:text-sm text-orange-700 space-y-1 list-disc list-inside">
+                    <li>Fast antal runder (typisk 5-7)</li>
+                    <li>Spillere med samme score møder hinanden</li>
+                    <li>Ingen bliver slået ud - alle spiller alle runder</li>
+                    <li>Vindere kåres på samlet point efter alle runder</li>
+                    <li>God balance mellem retfærdighed og turneringslængde</li>
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
