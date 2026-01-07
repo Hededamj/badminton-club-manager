@@ -4,6 +4,7 @@ import { compare } from 'bcryptjs'
 import { db } from './db'
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: 'Credentials',
