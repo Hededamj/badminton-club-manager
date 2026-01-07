@@ -14,6 +14,7 @@ export interface Player {
   id: string
   name: string
   level: number
+  gender?: 'MALE' | 'FEMALE' | null
 }
 
 export interface Match {
@@ -46,6 +47,7 @@ interface MatchScore {
     partnershipVariety: number
     oppositionVariety: number
     playerRest: number
+    mixedDoublesBonus: number
   }
 }
 
@@ -54,17 +56,55 @@ const WEIGHTS = {
   partnershipVariety: 5,
   oppositionVariety: 3,
   playerRest: 8,
+  mixedDoublesBonus: 7, // Bonus for mixed doubles matches
+}
+
+/**
+ * Check if a pairing is valid for mixed doubles
+ */
+function isValidMixedPair(player1: Player, player2: Player): boolean {
+  // If both have gender info, they should be opposite genders for mixed
+  if (player1.gender && player2.gender) {
+    return player1.gender !== player2.gender
+  }
+  // If no gender info, allow any pairing
+  return true
 }
 
 /**
  * Generate all possible team pairings from a list of players
+ * Prioritizes mixed doubles (male+female) when possible
  */
 function generateTeamPairings(players: Player[]): Array<[Player, Player]> {
   const pairs: Array<[Player, Player]> = []
 
+  // Separate by gender if available
+  const males = players.filter(p => p.gender === 'MALE')
+  const females = players.filter(p => p.gender === 'FEMALE')
+  const unknown = players.filter(p => !p.gender)
+
+  // If we have both males and females, prioritize mixed pairs
+  if (males.length > 0 && females.length > 0) {
+    // Create all male+female pairs
+    for (const male of males) {
+      for (const female of females) {
+        pairs.push([male, female])
+      }
+    }
+  }
+
+  // Also add same-gender pairs (for when mixed isn't possible)
   for (let i = 0; i < players.length; i++) {
     for (let j = i + 1; j < players.length; j++) {
-      pairs.push([players[i], players[j]])
+      const pair: [Player, Player] = [players[i], players[j]]
+      // Only add if not already added as mixed pair
+      const alreadyExists = pairs.some(
+        p => (p[0].id === pair[0].id && p[1].id === pair[1].id) ||
+             (p[0].id === pair[1].id && p[1].id === pair[0].id)
+      )
+      if (!alreadyExists) {
+        pairs.push(pair)
+      }
     }
   }
 
@@ -200,12 +240,25 @@ function scoreMatch(
   const restScores = allPlayers.map(p => getPlayerRestScore(p.id, recentMatches))
   const playerRestScore = Math.max(...restScores) // Worst case
 
+  // 5. Mixed doubles bonus (0 = not mixed, 1 = both teams are mixed M+F)
+  let mixedDoublesBonusScore = 0
+  const team1IsMixed = match.team1[0].gender && match.team1[1].gender &&
+                       match.team1[0].gender !== match.team1[1].gender
+  const team2IsMixed = match.team2[0].gender && match.team2[1].gender &&
+                       match.team2[0].gender !== match.team2[1].gender
+
+  // If both teams are mixed (M+F), give big bonus (lower score is better, so subtract)
+  if (team1IsMixed && team2IsMixed) {
+    mixedDoublesBonusScore = -1 // Negative to reduce total score (make it better)
+  }
+
   // Calculate weighted total (lower is better)
   const totalScore =
     levelFairnessScore * WEIGHTS.levelFairness +
     partnershipVarietyScore * WEIGHTS.partnershipVariety +
     oppositionVarietyScore * WEIGHTS.oppositionVariety +
-    playerRestScore * WEIGHTS.playerRest
+    playerRestScore * WEIGHTS.playerRest +
+    mixedDoublesBonusScore * WEIGHTS.mixedDoublesBonus // Negative bonus lowers score
 
   return {
     match: {
@@ -220,6 +273,7 @@ function scoreMatch(
       partnershipVariety: partnershipVarietyScore,
       oppositionVariety: oppositionVarietyScore,
       playerRest: playerRestScore,
+      mixedDoublesBonus: mixedDoublesBonusScore,
     },
   }
 }
