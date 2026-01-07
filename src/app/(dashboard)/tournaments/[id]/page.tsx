@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { da } from 'date-fns/locale'
 import { AddTournamentPlayersDialog } from '@/components/tournament/add-tournament-players-dialog'
+import { TournamentBracket } from '@/components/tournament/tournament-bracket'
 
 interface Tournament {
   id: string
@@ -461,9 +462,9 @@ export default function TournamentDetailPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Kampe</CardTitle>
+                <CardTitle>Turnering</CardTitle>
                 <CardDescription>
-                  {tournament._count.matches} kampe i turneringen
+                  {tournament._count.matches} kampe i {formatLabels[tournament.format]} format
                 </CardDescription>
               </div>
               <Button
@@ -476,54 +477,11 @@ export default function TournamentDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {tournament.matches.map((match, index) => {
-                const team1 = match.matchPlayers.filter(mp => mp.team === 1)
-                const team2 = match.matchPlayers.filter(mp => mp.team === 2)
-
-                return (
-                  <div
-                    key={match.id}
-                    className="border rounded-lg p-4 space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">
-                        Kamp {index + 1}
-                      </span>
-                      {match.result ? (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">
-                            {match.result.team1Score} - {match.result.team2Score}
-                          </Badge>
-                          <Badge>Afsluttet</Badge>
-                        </div>
-                      ) : (
-                        <Badge variant="secondary">Afventer resultat</Badge>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">Hold 1</p>
-                        {team1.map(mp => (
-                          <div key={mp.player.id} className="text-sm">
-                            {mp.player.name} ({Math.round(mp.player.level)})
-                          </div>
-                        ))}
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">Hold 2</p>
-                        {team2.map(mp => (
-                          <div key={mp.player.id} className="text-sm">
-                            {mp.player.name} ({Math.round(mp.player.level)})
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <TournamentBracket
+              format={tournament.format as any}
+              matches={tournament.matches}
+              players={tournament.tournamentPlayers}
+            />
           </CardContent>
         </Card>
       )}

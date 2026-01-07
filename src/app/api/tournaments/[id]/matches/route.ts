@@ -53,36 +53,35 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
-    const { playerIds } = body
-
-    if (!playerIds || !Array.isArray(playerIds) || playerIds.length < 2) {
-      return NextResponse.json(
-        { error: 'Need at least 2 players to generate tournament matches' },
-        { status: 400 }
-      )
-    }
-
-    // Get tournament
+    // Get tournament with players
     const tournament = await prisma.tournament.findUnique({
       where: { id: params.id },
+      include: {
+        tournamentPlayers: {
+          include: {
+            player: true,
+          },
+        },
+      },
     })
 
     if (!tournament) {
       return NextResponse.json({ error: 'Tournament not found' }, { status: 404 })
     }
 
-    // Get players with their levels for seeding
-    const players = await prisma.player.findMany({
-      where: { id: { in: playerIds } },
-      orderBy: { level: 'desc' }, // Seed by level
-    })
-
-    if (players.length !== playerIds.length) {
-      return NextResponse.json({ error: 'Some players not found' }, { status: 404 })
+    if (tournament.tournamentPlayers.length < 2) {
+      return NextResponse.json(
+        { error: 'Need at least 2 players to generate tournament matches' },
+        { status: 400 }
+      )
     }
 
-    const sortedPlayerIds = players.map(p => p.id)
+    // Sort players by level for seeding (highest first)
+    const sortedPlayers = tournament.tournamentPlayers
+      .map(tp => tp.player)
+      .sort((a, b) => b.level - a.level)
+
+    const sortedPlayerIds = sortedPlayers.map(p => p.id)
 
     // Delete existing matches for this tournament
     await prisma.match.deleteMany({
