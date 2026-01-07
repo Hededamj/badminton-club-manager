@@ -106,45 +106,27 @@ export async function POST(
 
     // Generate matches based on format
     if (tournament.format === 'ROUND_ROBIN') {
-      // For round robin, every pair plays each other (doubles)
-      // We need groups of 4 players for badminton doubles
-      if (sortedPlayerIds.length % 4 !== 0) {
+      // For round robin with many players, use a limited approach:
+      // Each player plays with different partners against different opponents
+      // Rather than ALL possible team combinations (which would be thousands of matches)
+
+      if (sortedPlayerIds.length < 4) {
         return NextResponse.json(
-          { error: 'Round robin requires a multiple of 4 players for doubles' },
+          { error: 'Round robin requires at least 4 players' },
           { status: 400 }
         )
       }
 
-      // Generate all possible team combinations
-      const teams: { player1Id: string; player2Id: string }[] = []
-      for (let i = 0; i < sortedPlayerIds.length; i++) {
-        for (let j = i + 1; j < sortedPlayerIds.length; j++) {
-          teams.push({ player1Id: sortedPlayerIds[i], player2Id: sortedPlayerIds[j] })
-        }
-      }
+      // Limit matches to a reasonable number:
+      // Use round-robin scheduling where each player plays multiple rounds
+      // with different partners each time
+      const numPlayers = sortedPlayerIds.length
+      const numRounds = Math.min(numPlayers - 1, 10) // Max 10 rounds
 
-      // Create matches between all team pairs
-      for (let i = 0; i < teams.length; i++) {
-        for (let j = i + 1; j < teams.length; j++) {
-          const team1 = teams[i]
-          const team2 = teams[j]
+      // We'll skip the complex team-vs-team approach and just do this for now
+      // The actual match creation will be handled below
+      pairings = [] // Will be created in the match creation section
 
-          // Skip if teams share a player
-          if (
-            team1.player1Id === team2.player1Id ||
-            team1.player1Id === team2.player2Id ||
-            team1.player2Id === team2.player1Id ||
-            team1.player2Id === team2.player2Id
-          ) {
-            continue
-          }
-
-          pairings.push({
-            player1Id: team1.player1Id,
-            player2Id: team1.player2Id,
-          })
-        }
-      }
     } else if (tournament.format === 'SINGLE_ELIMINATION') {
       // For single elimination doubles, we need pairs
       if (sortedPlayerIds.length % 2 !== 0) {
@@ -168,64 +150,135 @@ export async function POST(
     const createdMatches = []
 
     if (tournament.format === 'ROUND_ROBIN') {
-      // Round robin matches for doubles
-      const teams: { player1Id: string; player2Id: string }[] = []
-      for (let i = 0; i < sortedPlayerIds.length; i++) {
-        for (let j = i + 1; j < sortedPlayerIds.length; j++) {
-          teams.push({ player1Id: sortedPlayerIds[i], player2Id: sortedPlayerIds[j] })
-        }
-      }
+      // Simplified Round Robin for doubles badminton
+      // Each player plays multiple matches with different partners/opponents
+      // Limited to a reasonable number of matches
 
-      let matchNumber = 0
+      const numPlayers = sortedPlayerIds.length
+      const matchesPerPlayer = Math.min(Math.floor(numPlayers / 2), 8) // Max 8 matches per player
+
+      const matchesToCreate: any[] = []
+      const playerMatchCount = new Map<string, number>()
+      const playerPartnerships = new Map<string, Set<string>>()
+      const playerOppositions = new Map<string, Set<string>>()
+
+      // Initialize tracking
+      sortedPlayerIds.forEach(id => {
+        playerMatchCount.set(id, 0)
+        playerPartnerships.set(id, new Set())
+        playerOppositions.set(id, new Set())
+      })
+
+      // Generate matches using a rotation algorithm
+      let matchNumber = 1
       let courtNumber = 1
       const maxCourts = 6
+      const maxMatchesTotal = numPlayers * matchesPerPlayer / 4 // 4 players per match
 
-      for (let i = 0; i < teams.length; i++) {
-        for (let j = i + 1; j < teams.length; j++) {
-          const team1 = teams[i]
-          const team2 = teams[j]
+      for (let round = 0; round < maxMatchesTotal && matchesToCreate.length < 200; round++) {
+        // Try to find 4 players for a match
+        const availablePlayers = sortedPlayerIds.filter(id =>
+          (playerMatchCount.get(id) || 0) < matchesPerPlayer
+        )
 
-          // Skip if teams share a player
-          if (
-            team1.player1Id === team2.player1Id ||
-            team1.player1Id === team2.player2Id ||
-            team1.player2Id === team2.player1Id ||
-            team1.player2Id === team2.player2Id
-          ) {
-            continue
+        if (availablePlayers.length < 4) break
+
+        // Pick 4 players trying to minimize repeated partnerships/oppositions
+        let bestMatch: string[] | null = null
+        let bestScore = Infinity
+
+        // Try a few random combinations
+        for (let attempt = 0; attempt < 10; attempt++) {
+          const shuffled = [...availablePlayers].sort(() => Math.random() - 0.5)
+          const fourPlayers = shuffled.slice(0, 4)
+
+          // Score based on previous partnerships/oppositions
+          let score = 0
+          const [p1, p2, p3, p4] = fourPlayers
+
+          // Check partnerships (p1-p2 and p3-p4)
+          if (playerPartnerships.get(p1)?.has(p2)) score += 10
+          if (playerPartnerships.get(p3)?.has(p4)) score += 10
+
+          // Check oppositions
+          if (playerOppositions.get(p1)?.has(p3)) score += 5
+          if (playerOppositions.get(p1)?.has(p4)) score += 5
+          if (playerOppositions.get(p2)?.has(p3)) score += 5
+          if (playerOppositions.get(p2)?.has(p4)) score += 5
+
+          if (score < bestScore) {
+            bestScore = score
+            bestMatch = fourPlayers
           }
 
-          const match = await prisma.match.create({
-            data: {
-              tournamentId: tournament.id,
-              courtNumber: courtNumber,
-              matchNumber: Math.floor(matchNumber / maxCourts) + 1,
-              status: 'PENDING',
-              matchPlayers: {
-                create: [
-                  { playerId: team1.player1Id, team: 1, position: 1 },
-                  { playerId: team1.player2Id, team: 1, position: 2 },
-                  { playerId: team2.player1Id, team: 2, position: 1 },
-                  { playerId: team2.player2Id, team: 2, position: 2 },
-                ],
-              },
-            },
-            include: {
-              matchPlayers: {
-                include: {
-                  player: {
-                    select: { id: true, name: true, level: true },
-                  },
+          if (score === 0) break // Perfect match found
+        }
+
+        if (!bestMatch) break
+
+        const [p1, p2, p3, p4] = bestMatch
+
+        // Check if this should be mixed doubles
+        const players = bestMatch.map(id => sortedPlayers.find(p => p.id === id)!)
+        let matchPlayers = players
+        if (shouldBeMixedDoubles(players[0], players[1], players[2], players[3])) {
+          matchPlayers = arrangeMixedDoubles(players)
+        }
+
+        matchesToCreate.push({
+          tournamentId: tournament.id,
+          courtNumber: courtNumber,
+          matchNumber: matchNumber,
+          status: 'PENDING',
+          matchPlayers: {
+            create: [
+              { playerId: matchPlayers[0].id, team: 1, position: 1 },
+              { playerId: matchPlayers[1].id, team: 1, position: 2 },
+              { playerId: matchPlayers[2].id, team: 2, position: 1 },
+              { playerId: matchPlayers[3].id, team: 2, position: 2 },
+            ],
+          },
+        })
+
+        // Update tracking
+        matchPlayers.forEach(p => {
+          playerMatchCount.set(p.id, (playerMatchCount.get(p.id) || 0) + 1)
+        })
+        playerPartnerships.get(matchPlayers[0].id)?.add(matchPlayers[1].id)
+        playerPartnerships.get(matchPlayers[1].id)?.add(matchPlayers[0].id)
+        playerPartnerships.get(matchPlayers[2].id)?.add(matchPlayers[3].id)
+        playerPartnerships.get(matchPlayers[3].id)?.add(matchPlayers[2].id)
+
+        playerOppositions.get(matchPlayers[0].id)?.add(matchPlayers[2].id)
+        playerOppositions.get(matchPlayers[0].id)?.add(matchPlayers[3].id)
+        playerOppositions.get(matchPlayers[1].id)?.add(matchPlayers[2].id)
+        playerOppositions.get(matchPlayers[1].id)?.add(matchPlayers[3].id)
+        playerOppositions.get(matchPlayers[2].id)?.add(matchPlayers[0].id)
+        playerOppositions.get(matchPlayers[2].id)?.add(matchPlayers[1].id)
+        playerOppositions.get(matchPlayers[3].id)?.add(matchPlayers[0].id)
+        playerOppositions.get(matchPlayers[3].id)?.add(matchPlayers[1].id)
+
+        courtNumber = (courtNumber % maxCourts) + 1
+        if (courtNumber === 1) matchNumber++
+      }
+
+      // Batch create all matches
+      for (const matchData of matchesToCreate) {
+        const match = await prisma.match.create({
+          data: matchData,
+          include: {
+            matchPlayers: {
+              include: {
+                player: {
+                  select: { id: true, name: true, level: true },
                 },
               },
             },
-          })
-
-          createdMatches.push(match)
-          matchNumber++
-          courtNumber = (courtNumber % maxCourts) + 1
-        }
+          },
+        })
+        createdMatches.push(match)
       }
+
     } else if (tournament.format === 'SINGLE_ELIMINATION') {
       // For single elimination, create team pairings from sorted players
       // Players should be arranged in teams of 2 first
