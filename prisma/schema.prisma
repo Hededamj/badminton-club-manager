@@ -40,6 +40,7 @@ model Player {
 
   user              User?
   trainingPlayers   TrainingPlayer[]
+  tournamentPlayers TournamentPlayer[]
   matchPlayers      MatchPlayer[]
   statistics        PlayerStatistics?
   partnershipsAsPlayer1 Partnership[] @relation("Player1Partnerships")
@@ -204,20 +205,37 @@ model Opposition {
 
 // Tournament
 model Tournament {
-  id          String           @id @default(uuid())
-  name        String           @db.VarChar(255)
-  startDate   DateTime         @map("start_date") @db.Date
-  endDate     DateTime?        @map("end_date") @db.Date
-  format      TournamentFormat
-  status      TournamentStatus @default(PLANNED)
-  description String?          @db.Text
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  id                String              @id @default(uuid())
+  name              String              @db.VarChar(255)
+  startDate         DateTime            @map("start_date") @db.Date
+  endDate           DateTime?           @map("end_date") @db.Date
+  format            TournamentFormat
+  status            TournamentStatus    @default(PLANNED)
+  description       String?             @db.Text
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
 
-  matches     Match[]
+  matches           Match[]
+  tournamentPlayers TournamentPlayer[]
 
   @@index([status])
   @@map("tournaments")
+}
+
+// Junction table: Tournament <-> Player
+model TournamentPlayer {
+  id           String     @id @default(uuid())
+  tournamentId String     @map("tournament_id")
+  playerId     String     @map("player_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  player       Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, playerId])
+  @@index([tournamentId])
+  @@index([playerId])
+  @@map("tournament_players")
 }
 
 // Enums

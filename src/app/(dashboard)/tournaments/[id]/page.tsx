@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { da } from 'date-fns/locale'
+import { AddTournamentPlayersDialog } from '@/components/tournament/add-tournament-players-dialog'
 
 interface Tournament {
   id: string
@@ -20,6 +21,15 @@ interface Tournament {
   _count: {
     matches: number
   }
+  tournamentPlayers: Array<{
+    player: {
+      id: string
+      name: string
+      level: number
+      gender: string | null
+      isActive: boolean
+    }
+  }>
   matches: Array<{
     id: string
     courtNumber: number
@@ -65,6 +75,7 @@ export default function TournamentDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [showAddPlayersDialog, setShowAddPlayersDialog] = useState(false)
 
   useEffect(() => {
     fetchTournament()
@@ -149,6 +160,27 @@ export default function TournamentDetailPage() {
       setError(err instanceof Error ? err.message : 'Der opstod en fejl')
     } finally {
       setGenerating(false)
+    }
+  }
+
+  const handleRemovePlayer = async (playerId: string) => {
+    if (!confirm('Er du sikker på at du vil fjerne denne spiller fra turneringen?')) {
+      return
+    }
+
+    try {
+      const id = await params.id
+      const res = await fetch(`/api/tournaments/${id}/players?playerId=${playerId}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        throw new Error('Kunne ikke fjerne spiller')
+      }
+
+      fetchTournament()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Der opstod en fejl')
     }
   }
 
@@ -267,7 +299,7 @@ export default function TournamentDetailPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{tournament.tournamentPlayers.length}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Tilmeldte spillere
             </p>
@@ -307,21 +339,57 @@ export default function TournamentDetailPage() {
               <div>
                 <CardTitle>Deltagere</CardTitle>
                 <CardDescription>
-                  0 spillere tilmeldt turneringen
+                  {tournament.tournamentPlayers.length} spillere tilmeldt turneringen
                 </CardDescription>
               </div>
-              <Button size="sm">
+              <Button size="sm" onClick={() => setShowAddPlayersDialog(true)}>
                 <UserPlus className="mr-2 h-4 w-4" />
                 Tilføj spillere
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="mx-auto h-12 w-12 opacity-20 mb-2" />
-              <p>Ingen spillere tilmeldt endnu</p>
-              <p className="text-sm mt-1">Klik på "Tilføj spillere" for at tilmelde</p>
-            </div>
+            {tournament.tournamentPlayers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="mx-auto h-12 w-12 opacity-20 mb-2" />
+                <p>Ingen spillere tilmeldt endnu</p>
+                <p className="text-sm mt-1">Klik på "Tilføj spillere" for at tilmelde</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {tournament.tournamentPlayers.map(({ player }) => (
+                  <div
+                    key={player.id}
+                    className="flex items-center justify-between p-2 rounded-lg border hover:bg-accent transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <p className="font-medium">{player.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>Niveau: {Math.round(player.level)}</span>
+                          {player.gender && (
+                            <Badge variant="outline" className="text-xs">
+                              {player.gender === 'MALE' ? 'Mand' : 'Kvinde'}
+                            </Badge>
+                          )}
+                          {!player.isActive && (
+                            <Badge variant="secondary" className="text-xs">Inaktiv</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemovePlayer(player.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -372,11 +440,11 @@ export default function TournamentDetailPage() {
                 Turneringen har ingen kampe endnu. Tilføj spillere og generer kampe for at starte.
               </p>
               <div className="flex gap-3 justify-center">
-                <Button variant="outline" disabled>
+                <Button variant="outline" onClick={() => setShowAddPlayersDialog(true)}>
                   <UserPlus className="mr-2 h-4 w-4" />
-                  Tilføj spillere først
+                  Tilføj spillere
                 </Button>
-                <Button onClick={handleGenerateMatches} disabled={generating}>
+                <Button onClick={handleGenerateMatches} disabled={generating || tournament.tournamentPlayers.length === 0}>
                   {generating ? 'Genererer kampe...' : 'Generer kampe'}
                 </Button>
               </div>
@@ -465,6 +533,14 @@ export default function TournamentDetailPage() {
           {error}
         </div>
       )}
+
+      <AddTournamentPlayersDialog
+        open={showAddPlayersDialog}
+        onOpenChange={setShowAddPlayersDialog}
+        onSuccess={fetchTournament}
+        tournamentId={tournament.id}
+        existingPlayerIds={tournament.tournamentPlayers.map(tp => tp.player.id)}
+      />
     </div>
   )
 }
