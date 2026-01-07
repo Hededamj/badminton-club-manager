@@ -41,6 +41,7 @@ interface Training {
         id: string
         name: string
         level: number
+        gender?: 'MALE' | 'FEMALE' | null
       }
       team: number
       position: number
@@ -450,21 +451,6 @@ export default function TrainingDetailPage() {
                         )}
                       </div>
 
-                      {benchedPlayersForRound.length > 0 && (
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
-                          <p className="text-sm font-medium text-orange-900">
-                            Spillere der sidder over i denne runde:
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {benchedPlayersForRound.map(player => (
-                              <Badge key={player.id} variant="secondary" className="bg-white">
-                                {player.name} ({Math.round(player.level)})
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
                       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {roundMatches.map(match => {
                           const team1 = match.matchPlayers.filter(mp => mp.team === 1).map(mp => mp.player)
@@ -489,6 +475,21 @@ export default function TrainingDetailPage() {
                           )
                         })}
                       </div>
+
+                      {benchedPlayersForRound.length > 0 && (
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+                          <p className="text-sm font-medium text-orange-900">
+                            Spillere der sidder over i denne runde:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {benchedPlayersForRound.map(player => (
+                              <Badge key={player.id} variant="secondary" className="bg-white">
+                                {player.name} ({Math.round(player.level)})
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -518,25 +519,32 @@ export default function TrainingDetailPage() {
                         )}
                       </div>
 
-                      {benchedPlayersForRound.length > 0 && (
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
-                          <p className="text-sm font-medium text-orange-900">
-                            Spillere der sidder over i denne runde:
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {benchedPlayersForRound.map(player => (
-                              <Badge key={player.id} variant="secondary" className="bg-white">
-                                {player.name} ({Math.round(player.level)})
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
                       <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {roundMatches.map(match => {
                         const team1 = match.matchPlayers.filter(mp => mp.team === 1)
                         const team2 = match.matchPlayers.filter(mp => mp.team === 2)
+
+                        // Determine match type
+                        const allPlayers = [...team1, ...team2].map(mp => mp.player)
+                        const genders = allPlayers.map(p => p.gender).filter(Boolean)
+                        let matchType = null
+                        let matchTypeColor = '#64748b'
+
+                        if (genders.length === 4) {
+                          const maleCount = genders.filter(g => g === 'MALE').length
+                          const femaleCount = genders.filter(g => g === 'FEMALE').length
+
+                          if (maleCount === 4) {
+                            matchType = 'HD'
+                            matchTypeColor = '#3b82f6'
+                          } else if (femaleCount === 4) {
+                            matchType = 'DD'
+                            matchTypeColor = '#ec4899'
+                          } else if (maleCount === 2 && femaleCount === 2) {
+                            matchType = 'MD'
+                            matchTypeColor = '#8b5cf6'
+                          }
+                        }
 
                         return (
                           <div
@@ -549,9 +557,19 @@ export default function TrainingDetailPage() {
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-muted-foreground">
-                                Bane {match.courtNumber}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-muted-foreground">
+                                  Bane {match.courtNumber}
+                                </span>
+                                {matchType && (
+                                  <Badge
+                                    className="text-white border-0"
+                                    style={{ backgroundColor: matchTypeColor }}
+                                  >
+                                    {matchType}
+                                  </Badge>
+                                )}
+                              </div>
                               {match.result ? (
                                 <div className="flex items-center gap-2">
                                   <Badge variant="outline">
@@ -586,6 +604,21 @@ export default function TrainingDetailPage() {
                         )
                       })}
                     </div>
+
+                      {benchedPlayersForRound.length > 0 && (
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+                          <p className="text-sm font-medium text-orange-900">
+                            Spillere der sidder over i denne runde:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {benchedPlayersForRound.map(player => (
+                              <Badge key={player.id} variant="secondary" className="bg-white">
+                                {player.name} ({Math.round(player.level)})
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 )
               })}
