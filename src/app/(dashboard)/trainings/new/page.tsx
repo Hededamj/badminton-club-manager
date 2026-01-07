@@ -26,7 +26,6 @@ export default function NewTrainingPage() {
   const [formData, setFormData] = useState({
     name: '',
     date: '',
-    startTime: '',
     courts: 3,
     matchesPerCourt: 3,
   })
@@ -148,19 +147,6 @@ export default function NewTrainingPage() {
                   }
                   disabled={loading}
                   required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="startTime">Starttidspunkt</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) =>
-                    setFormData({ ...formData, startTime: e.target.value })
-                  }
-                  disabled={loading}
                 />
               </div>
 

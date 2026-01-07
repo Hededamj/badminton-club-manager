@@ -67,20 +67,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const validatedData = createTrainingSchema.parse(body)
 
-    // Parse startTime correctly by combining with date
-    let startTimeDate = null
-    if (validatedData.startTime) {
-      const [hours, minutes] = validatedData.startTime.split(':')
-      startTimeDate = new Date(validatedData.date)
-      startTimeDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
-    }
-
     // Create training with players
     const training = await prisma.training.create({
       data: {
         name: validatedData.name,
         date: new Date(validatedData.date),
-        startTime: startTimeDate,
         courts: validatedData.courts,
         matchesPerCourt: validatedData.matchesPerCourt,
         status: 'PLANNED',
