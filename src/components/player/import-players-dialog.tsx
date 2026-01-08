@@ -176,17 +176,20 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
 
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || 'Kunne ikke hente teams')
+        const errorMsg = errorData.error || 'Kunne ikke hente teams'
+        const details = errorData.details ? `\n\nDetaljer: ${errorData.details}` : ''
+        throw new Error(errorMsg + details)
       }
 
       const teams: HoldsportTeam[] = await res.json()
       setHoldsportTeams(teams)
 
       if (teams.length === 0) {
-        setError('Ingen teams fundet')
+        setError('Ingen teams fundet for denne bruger. Kontakt Holdsport support hvis du mener dette er en fejl.')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Der opstod en fejl')
+      console.error('Holdsport fetch error:', err)
+      setError(err instanceof Error ? err.message : 'Der opstod en fejl ved forbindelse til Holdsport')
     } finally {
       setFetchingTeams(false)
     }
@@ -434,8 +437,9 @@ Bent Hansen,bent@mail.dk
         )}
 
         {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
+          <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive space-y-2">
+            <p className="font-semibold">⚠️ Fejl:</p>
+            <p className="whitespace-pre-wrap">{error}</p>
           </div>
         )}
 

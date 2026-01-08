@@ -46,18 +46,40 @@ export async function GET(request: NextRequest) {
     })
 
     console.log('Holdsport teams response status:', response.status)
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Holdsport error response:', errorText)
+      console.error('Full response status:', response.status, response.statusText)
 
       if (response.status === 401) {
         return NextResponse.json(
-          { error: 'Forkert brugernavn eller adgangskode' },
+          {
+            error: 'Forkert brugernavn eller adgangskode til Holdsport. Tjek at du bruger dit Holdsport email og adgangskode.',
+            details: errorText
+          },
           { status: 401 }
         )
       }
-      throw new Error('Kunne ikke hente teams fra Holdsport')
+
+      if (response.status === 403) {
+        return NextResponse.json(
+          {
+            error: 'Ingen adgang. Kontakt Holdsport support for at få API adgang aktiveret.',
+            details: errorText
+          },
+          { status: 403 }
+        )
+      }
+
+      return NextResponse.json(
+        {
+          error: `Holdsport API fejl: ${response.status} ${response.statusText}`,
+          details: errorText
+        },
+        { status: response.status }
+      )
     }
 
     const teams: HoldsportTeam[] = await response.json()
