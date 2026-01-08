@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       console.log('Session retrieved:', session ? `User: ${session.user?.email}, Role: ${session.user?.role}` : 'No session')
     } catch (sessionError) {
       console.error('Session error:', sessionError)
-      const errorMessage = sessionError instanceof Error ? (sessionError as Error).message : 'Unknown'
+      const errorMessage = sessionError instanceof Error ? sessionError.message : 'Unknown'
       return NextResponse.json(
         { error: 'Session fejl', details: errorMessage },
         { status: 500 }
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       console.log('Body parsed successfully')
     } catch (parseError) {
       console.error('Body parse error:', parseError)
-      const errorMessage = parseError instanceof Error ? (parseError as Error).message : 'Unknown'
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown'
       return NextResponse.json(
         { error: 'JSON parse fejl', details: errorMessage },
         { status: 400 }
@@ -176,15 +176,20 @@ export async function POST(request: NextRequest) {
       console.log('Holdsport API response status:', response.status)
     } catch (fetchError) {
       console.error('Holdsport fetch error:', fetchError)
-      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+      if (fetchError instanceof Error) {
+        if (fetchError.name === 'AbortError') {
+          return NextResponse.json(
+            { error: 'Holdsport API timeout - prøv igen' },
+            { status: 504 }
+          )
+        }
         return NextResponse.json(
-          { error: 'Holdsport API timeout - prøv igen' },
-          { status: 504 }
+          { error: 'Kunne ikke forbinde til Holdsport API', details: fetchError.message },
+          { status: 503 }
         )
       }
-      const errorMessage = fetchError instanceof Error ? (fetchError as Error).message : 'Unknown'
       return NextResponse.json(
-        { error: 'Kunne ikke forbinde til Holdsport API', details: errorMessage },
+        { error: 'Kunne ikke forbinde til Holdsport API', details: 'Unknown error' },
         { status: 503 }
       )
     }
@@ -221,7 +226,7 @@ export async function POST(request: NextRequest) {
       console.log(`Team created/updated: ${team.name} (ID: ${team.id})`)
     } catch (dbError) {
       console.error('Database error creating team:', dbError)
-      const errorMessage = dbError instanceof Error ? (dbError as Error).message : 'Unknown'
+      const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown'
       throw new Error(`Database fejl: ${errorMessage}`)
     }
 
@@ -318,12 +323,11 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Holdsport API POST error:', error)
-    const errorMessage = error instanceof Error ? (error as Error).message : 'Unknown error'
-    const errorStack = error instanceof Error ? (error as Error).stack : undefined
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
     console.error('Error details:', {
       message: errorMessage,
       stack: errorStack,
-      error: JSON.stringify(error, null, 2)
     })
     return NextResponse.json(
       {
