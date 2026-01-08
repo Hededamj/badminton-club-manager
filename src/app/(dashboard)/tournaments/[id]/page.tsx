@@ -25,7 +25,11 @@ interface Match {
     }
     team: number
   }>
-  result: any
+  result?: {
+    team1Score: number
+    team2Score: number
+    winningTeam: number
+  } | null
 }
 
 interface Tournament {
