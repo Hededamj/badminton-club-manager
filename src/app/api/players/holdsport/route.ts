@@ -180,16 +180,15 @@ export async function POST(request: NextRequest) {
       console.log('Holdsport API response status:', response.status)
     } catch (fetchError: unknown) {
       console.error('Holdsport fetch error:', fetchError)
-      if (fetchError instanceof Error) {
-        if (fetchError.name === 'AbortError') {
-          return NextResponse.json(
-            { error: 'Holdsport API timeout - prøv igen' },
-            { status: 504 }
-          )
-        }
+      const errorMsg = getErrorMessage(fetchError)
+      if (errorMsg.includes('abort')) {
+        return NextResponse.json(
+          { error: 'Holdsport API timeout - prøv igen' },
+          { status: 504 }
+        )
       }
       return NextResponse.json(
-        { error: 'Kunne ikke forbinde til Holdsport API', details: getErrorMessage(fetchError) },
+        { error: 'Kunne ikke forbinde til Holdsport API', details: errorMsg },
         { status: 503 }
       )
     }
@@ -323,10 +322,8 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error('Holdsport API POST error:', error)
     const errorMessage = getErrorMessage(error)
-    const errorStack = error instanceof Error ? error.stack : undefined
     console.error('Error details:', {
       message: errorMessage,
-      stack: errorStack,
     })
     return NextResponse.json(
       {
