@@ -201,6 +201,17 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
       return
     }
 
+    console.log('Starting Holdsport import...', {
+      hasUsername: !!holdsportUsername,
+      hasPassword: !!holdsportPassword,
+      teamId: selectedTeamId,
+    })
+
+    if (!holdsportUsername || !holdsportPassword) {
+      setError('Brugernavn og adgangskode mangler. Indtast dem igen.')
+      return
+    }
+
     try {
       setLoading(true)
       setError('')
@@ -209,6 +220,8 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
       // Get selected team name
       const selectedTeam = holdsportTeams.find(t => t.id === selectedTeamId)
       const teamName = selectedTeam?.name || 'Unavngivet hold'
+
+      console.log('Sending import request...')
 
       // Import team and members from Holdsport (creates team + players + associations in one call)
       const fetchRes = await fetch('/api/players/holdsport', {
