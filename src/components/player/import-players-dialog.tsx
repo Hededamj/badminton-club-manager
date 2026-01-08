@@ -282,7 +282,7 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
                     value={holdsportUsername}
                     onChange={(e) => setHoldsportUsername(e.target.value)}
                     placeholder="dit-brugernavn"
-                    disabled={loading || fetchingTeams}
+                    disabled={fetchingTeams}
                   />
                 </div>
                 <div className="space-y-2">
@@ -293,7 +293,7 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
                     value={holdsportPassword}
                     onChange={(e) => setHoldsportPassword(e.target.value)}
                     placeholder="••••••••"
-                    disabled={loading || fetchingTeams}
+                    disabled={fetchingTeams}
                   />
                 </div>
               </div>

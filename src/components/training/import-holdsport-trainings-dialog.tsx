@@ -196,7 +196,7 @@ export function ImportHoldsportTrainingsDialog({
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="demo"
-                  disabled={fetchingTeams || fetchingTrainings}
+                  disabled={fetchingTeams}
                 />
               </div>
               <div className="space-y-2">
@@ -207,7 +207,7 @@ export function ImportHoldsportTrainingsDialog({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="demo"
-                  disabled={fetchingTeams || fetchingTrainings}
+                  disabled={fetchingTeams}
                 />
               </div>
             </div>
