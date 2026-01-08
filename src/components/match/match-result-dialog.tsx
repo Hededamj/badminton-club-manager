@@ -100,14 +100,14 @@ export function MatchResultDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-center text-xl">
+          <DialogTitle className="text-center text-lg md:text-xl pr-6">
             Indtast resultat - Bane {courtNumber}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-2">
+        <div className="space-y-4 md:space-y-6 py-2">
           {/* Step 1: Select winning team */}
           {!winningTeam ? (
             <div className="space-y-4">
@@ -118,15 +118,15 @@ export function MatchResultDialog({
               <div className="space-y-3">
                 <Button
                   onClick={() => handleTeamWin(1)}
-                  className="w-full h-auto py-6 text-left bg-blue-500 hover:bg-blue-600 shadow-lg"
+                  className="w-full h-auto py-8 md:py-6 text-left bg-blue-500 hover:bg-blue-600 shadow-lg touch-manipulation"
                   size="lg"
                 >
                   <div className="flex flex-col gap-2 w-full">
-                    <div className="font-bold text-lg">Hold 1 (Blå)</div>
-                    <div className="text-sm opacity-90 space-y-1">
+                    <div className="font-bold text-xl md:text-lg">Hold 1 (Blå)</div>
+                    <div className="text-base md:text-sm opacity-90 space-y-1">
                       {team1Players.map(mp => (
                         <div key={mp.id}>
-                          {mp.name} <span className="text-xs">({Math.round(mp.level)})</span>
+                          {mp.name} <span className="text-sm md:text-xs">({Math.round(mp.level)})</span>
                         </div>
                       ))}
                     </div>
@@ -135,15 +135,15 @@ export function MatchResultDialog({
 
                 <Button
                   onClick={() => handleTeamWin(2)}
-                  className="w-full h-auto py-6 text-left bg-red-500 hover:bg-red-600 shadow-lg"
+                  className="w-full h-auto py-8 md:py-6 text-left bg-red-500 hover:bg-red-600 shadow-lg touch-manipulation"
                   size="lg"
                 >
                   <div className="flex flex-col gap-2 w-full">
-                    <div className="font-bold text-lg">Hold 2 (Rød)</div>
-                    <div className="text-sm opacity-90 space-y-1">
+                    <div className="font-bold text-xl md:text-lg">Hold 2 (Rød)</div>
+                    <div className="text-base md:text-sm opacity-90 space-y-1">
                       {team2Players.map(mp => (
                         <div key={mp.id}>
-                          {mp.name} <span className="text-xs">({Math.round(mp.level)})</span>
+                          {mp.name} <span className="text-sm md:text-xs">({Math.round(mp.level)})</span>
                         </div>
                       ))}
                     </div>
@@ -163,19 +163,21 @@ export function MatchResultDialog({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="team1Score" className="text-center block font-bold text-blue-600">
+                  <Label htmlFor="team1Score" className="text-center block font-bold text-blue-600 text-sm md:text-base">
                     Hold 1 (Blå)
                   </Label>
                   <Input
                     id="team1Score"
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     min="0"
                     max="30"
                     value={team1Score}
                     onChange={(e) => setTeam1Score(e.target.value)}
-                    className="text-center text-3xl font-bold h-20 border-2 border-blue-300"
+                    className="text-center text-4xl md:text-3xl font-bold h-24 md:h-20 border-2 border-blue-300 touch-manipulation"
                     placeholder="0"
                     autoFocus
                   />
@@ -187,17 +189,19 @@ export function MatchResultDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="team2Score" className="text-center block font-bold text-red-600">
+                  <Label htmlFor="team2Score" className="text-center block font-bold text-red-600 text-sm md:text-base">
                     Hold 2 (Rød)
                   </Label>
                   <Input
                     id="team2Score"
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     min="0"
                     max="30"
                     value={team2Score}
                     onChange={(e) => setTeam2Score(e.target.value)}
-                    className="text-center text-3xl font-bold h-20 border-2 border-red-300"
+                    className="text-center text-4xl md:text-3xl font-bold h-24 md:h-20 border-2 border-red-300 touch-manipulation"
                     placeholder="0"
                   />
                   <div className="text-xs text-muted-foreground text-center space-y-0.5">
@@ -214,7 +218,7 @@ export function MatchResultDialog({
                 <div className="grid grid-cols-3 gap-2">
                   <Button
                     variant="outline"
-                    size="lg"
+                    className="h-14 md:h-12 text-base md:text-sm touch-manipulation"
                     onClick={() => {
                       if (winningTeam === 1) {
                         setTeam1Score('21')
@@ -229,7 +233,7 @@ export function MatchResultDialog({
                   </Button>
                   <Button
                     variant="outline"
-                    size="lg"
+                    className="h-14 md:h-12 text-base md:text-sm touch-manipulation"
                     onClick={() => {
                       if (winningTeam === 1) {
                         setTeam1Score('21')
@@ -244,7 +248,7 @@ export function MatchResultDialog({
                   </Button>
                   <Button
                     variant="outline"
-                    size="lg"
+                    className="h-14 md:h-12 text-base md:text-sm touch-manipulation"
                     onClick={() => {
                       if (winningTeam === 1) {
                         setTeam1Score('21')
@@ -266,20 +270,18 @@ export function MatchResultDialog({
                 </div>
               )}
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
                   onClick={() => setWinningTeam(null)}
-                  className="flex-1"
-                  size="lg"
+                  className="flex-1 h-14 md:h-12 text-base md:text-sm touch-manipulation"
                   disabled={submitting}
                 >
                   Tilbage
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  className="flex-1"
-                  size="lg"
+                  className="flex-1 h-14 md:h-12 text-base md:text-sm touch-manipulation"
                   disabled={submitting || !team1Score || !team2Score}
                 >
                   {submitting ? 'Gemmer...' : 'Gem resultat ✓'}
