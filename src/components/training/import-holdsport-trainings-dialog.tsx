@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,11 +52,17 @@ export function ImportHoldsportTrainingsDialog({
   const [importedIds, setImportedIds] = useState<Set<string>>(new Set())
   const [error, setError] = useState('')
 
+  // Store credentials in ref to preserve them between steps
+  const credentialsRef = useRef({ username: '', password: '' })
+
   const handleFetchTeams = async () => {
     if (!username || !password) {
       setError('Indtast brugernavn og adgangskode')
       return
     }
+
+    // Store credentials in ref for later use
+    credentialsRef.current = { username, password }
 
     try {
       setFetchingTeams(true)
@@ -93,13 +99,16 @@ export function ImportHoldsportTrainingsDialog({
       return
     }
 
+    // Use credentials from ref
+    const { username: user, password: pass } = credentialsRef.current
+
     try {
       setFetchingTrainings(true)
       setError('')
       setTrainings([])
 
       const res = await fetch(
-        `/api/trainings/holdsport?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&teamId=${selectedTeamId}`
+        `/api/trainings/holdsport?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}&teamId=${selectedTeamId}`
       )
 
       if (!res.ok) {
@@ -125,13 +134,16 @@ export function ImportHoldsportTrainingsDialog({
       setImporting(training.holdsportId)
       setError('')
 
+      // Use credentials from ref
+      const { username: user, password: pass } = credentialsRef.current
+
       const res = await fetch('/api/trainings/holdsport', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           training,
-          username,
-          password,
+          username: user,
+          password: pass,
           teamId: selectedTeamId,
         }),
       })
