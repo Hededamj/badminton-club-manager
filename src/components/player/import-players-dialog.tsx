@@ -239,7 +239,9 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
 
       if (!fetchRes.ok) {
         const errorData = await fetchRes.json()
-        throw new Error(errorData.error || 'Kunne ikke importere hold og spillere')
+        const errorMsg = errorData.error || 'Kunne ikke importere hold og spillere'
+        const details = errorData.details ? `\n\nDetaljer: ${errorData.details}` : ''
+        throw new Error(errorMsg + details)
       }
 
       const data = await fetchRes.json()
