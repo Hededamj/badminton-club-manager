@@ -99,18 +99,30 @@ export async function POST(request: NextRequest) {
   try {
     console.log('POST /api/players/holdsport - Starting import')
 
-    const session = await getServerSession(authOptions)
-    console.log('Session:', session ? `User: ${session.user?.email}, Role: ${session.user?.role}` : 'No session')
+    let session
+    try {
+      session = await getServerSession(authOptions)
+      console.log('Session retrieved:', session ? `User: ${session.user?.email}, Role: ${session.user?.role}` : 'No session')
+    } catch (sessionError) {
+      console.error('Session error:', sessionError)
+      return NextResponse.json(
+        { error: 'Session fejl', details: sessionError instanceof Error ? sessionError.message : 'Unknown' },
+        { status: 500 }
+      )
+    }
 
     if (!session || session.user.role !== 'ADMIN') {
       console.error('Unauthorized access attempt:', session?.user?.email)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log('Parsing request body...')
     const body = await request.json()
     const { username, password, teamId, teamName } = body
+    console.log('Request data:', { hasUsername: !!username, hasPassword: !!password, teamId, teamName })
 
     if (!username || !password || !teamId) {
+      console.error('Missing required fields')
       return NextResponse.json(
         { error: 'Manglende påkrævede felter' },
         { status: 400 }
@@ -118,6 +130,7 @@ export async function POST(request: NextRequest) {
     }
 
     const auth = Buffer.from(`${username}:${password}`).toString('base64')
+    console.log('Fetching members from Holdsport API...')
 
     // Fetch team members from Holdsport
     const response = await fetch(
@@ -128,6 +141,7 @@ export async function POST(request: NextRequest) {
         },
       }
     )
+    console.log('Holdsport API response status:', response.status)
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -140,24 +154,29 @@ export async function POST(request: NextRequest) {
     }
 
     const members: HoldsportMember[] = await response.json()
-
     console.log(`Fetched ${members.length} members from Holdsport team ${teamId}`)
 
     // Create or update team in database
-    const team = await prisma.team.upsert({
-      where: { holdsportId: teamId },
-      update: {
-        name: teamName || `Team ${teamId}`,
-        isActive: true,
-      },
-      create: {
-        name: teamName || `Team ${teamId}`,
-        holdsportId: teamId,
-        isActive: true,
-      },
-    })
-
-    console.log(`Team created/updated: ${team.name}`)
+    console.log('Creating/updating team in database...')
+    let team
+    try {
+      team = await prisma.team.upsert({
+        where: { holdsportId: teamId },
+        update: {
+          name: teamName || `Team ${teamId}`,
+          isActive: true,
+        },
+        create: {
+          name: teamName || `Team ${teamId}`,
+          holdsportId: teamId,
+          isActive: true,
+        },
+      })
+      console.log(`Team created/updated: ${team.name} (ID: ${team.id})`)
+    } catch (dbError) {
+      console.error('Database error creating team:', dbError)
+      throw new Error(`Database fejl: ${dbError instanceof Error ? dbError.message : 'Unknown'}`)
+    }
 
     // Import players and associate with team
     let imported = 0
