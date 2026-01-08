@@ -106,13 +106,6 @@ export async function POST(request: NextRequest) {
   console.log('Request URL:', request.url)
   console.log('Request method:', request.method)
 
-  // TEMPORARY: Return immediately to test if route is reachable
-  return NextResponse.json({
-    success: false,
-    error: 'TEST MODE: Route is reachable',
-    timestamp: new Date().toISOString()
-  })
-
   try {
     console.log('Step 1: Getting session...')
 
