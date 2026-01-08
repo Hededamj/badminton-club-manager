@@ -243,6 +243,7 @@ model Tournament {
   startDate         DateTime            @map("start_date") @db.Date
   endDate           DateTime?           @map("end_date") @db.Date
   format            TournamentFormat
+  matchTypes        TournamentMatchType[] @default([MENS_DOUBLES, WOMENS_DOUBLES, MIXED_DOUBLES]) @map("match_types")
   status            TournamentStatus    @default(PLANNED)
   description       String?             @db.Text
   createdAt         DateTime            @default(now()) @map("created_at")
@@ -296,6 +297,13 @@ enum TournamentFormat {
   DOUBLE_ELIMINATION
   ROUND_ROBIN
   SWISS
+}
+
+enum TournamentMatchType {
+  MENS_DOUBLES      // HD - Herre Double
+  WOMENS_DOUBLES    // DD - Dame Double
+  MIXED_DOUBLES     // MD - Mix Double
+  SINGLES           // Single
 }
 
 enum TournamentStatus {

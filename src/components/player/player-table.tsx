@@ -28,61 +28,73 @@ export function PlayerTable({ players, loading, onUpdate, onEdit, onDelete }: Pl
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Navn</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Niveau</TableHead>
-          <TableHead>Kampe</TableHead>
-          <TableHead>Sejre</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Handlinger</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {players.map((player) => (
-          <TableRow key={player.id}>
-            <TableCell className="font-medium">
-              <Link
-                href={`/players/${player.id}`}
-                className="hover:underline hover:text-primary transition-colors"
-              >
-                {player.name}
-              </Link>
-            </TableCell>
-            <TableCell>{player.email || '-'}</TableCell>
-            <TableCell>{Math.round(player.level)}</TableCell>
-            <TableCell>{player.statistics?.totalMatches || 0}</TableCell>
-            <TableCell>{player.statistics?.wins || 0}</TableCell>
-            <TableCell>
-              {player.isActive ? (
-                <Badge variant="default">Aktiv</Badge>
-              ) : (
-                <Badge variant="secondary">Inaktiv</Badge>
-              )}
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onEdit(player)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(player)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-            </TableCell>
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Navn</TableHead>
+            <TableHead>Køn</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Niveau</TableHead>
+            <TableHead>Kampe</TableHead>
+            <TableHead>Sejre</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Handlinger</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {players.map((player) => (
+            <TableRow key={player.id}>
+              <TableCell className="font-medium">
+                <Link
+                  href={`/players/${player.id}`}
+                  className="hover:underline hover:text-primary transition-colors"
+                >
+                  {player.name}
+                </Link>
+              </TableCell>
+              <TableCell>
+                {player.gender ? (
+                  <Badge variant="outline" className="text-xs">
+                    {player.gender === 'MALE' ? 'Mand' : 'Kvinde'}
+                  </Badge>
+                ) : (
+                  <span className="text-muted-foreground text-sm">-</span>
+                )}
+              </TableCell>
+              <TableCell>{player.email || '-'}</TableCell>
+              <TableCell>{Math.round(player.level)}</TableCell>
+              <TableCell>{player.statistics?.totalMatches || 0}</TableCell>
+              <TableCell>{player.statistics?.wins || 0}</TableCell>
+              <TableCell>
+                {player.isActive ? (
+                  <Badge variant="default">Aktiv</Badge>
+                ) : (
+                  <Badge variant="secondary">Inaktiv</Badge>
+                )}
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEdit(player)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDelete(player)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   )
 }

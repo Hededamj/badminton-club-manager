@@ -29,30 +29,31 @@ interface TournamentBracketProps {
   format: 'SINGLE_ELIMINATION' | 'DOUBLE_ELIMINATION' | 'ROUND_ROBIN' | 'SWISS'
   matches: Match[]
   players: Array<{ player: Player }>
+  onMatchClick?: (match: Match) => void
 }
 
-export function TournamentBracket({ format, matches, players }: TournamentBracketProps) {
+export function TournamentBracket({ format, matches, players, onMatchClick }: TournamentBracketProps) {
   if (format === 'SINGLE_ELIMINATION') {
-    return <SingleEliminationBracket matches={matches} />
+    return <SingleEliminationBracket matches={matches} onMatchClick={onMatchClick} />
   }
 
   if (format === 'DOUBLE_ELIMINATION') {
-    return <DoubleEliminationBracket matches={matches} />
+    return <DoubleEliminationBracket matches={matches} onMatchClick={onMatchClick} />
   }
 
   if (format === 'ROUND_ROBIN') {
-    return <RoundRobinStandings matches={matches} players={players} />
+    return <RoundRobinStandings matches={matches} players={players} onMatchClick={onMatchClick} />
   }
 
   if (format === 'SWISS') {
-    return <SwissStandings matches={matches} players={players} />
+    return <SwissStandings matches={matches} players={players} onMatchClick={onMatchClick} />
   }
 
   return null
 }
 
 // Single Elimination Bracket
-function SingleEliminationBracket({ matches }: { matches: Match[] }) {
+function SingleEliminationBracket({ matches, onMatchClick }: { matches: Match[], onMatchClick?: (match: Match) => void }) {
   // Calculate number of rounds based on number of matches
   // For single elimination: total matches = players - 1
   // Round 1 has n/2 matches, Round 2 has n/4, etc.
@@ -85,7 +86,7 @@ function SingleEliminationBracket({ matches }: { matches: Match[] }) {
               </h4>
               <div className="flex flex-col gap-6">
                 {roundMatches.map((match) => (
-                  <BracketMatch key={match.id} match={match} />
+                  <BracketMatch key={match.id} match={match} onClick={onMatchClick} />
                 ))}
               </div>
             </div>
@@ -97,7 +98,7 @@ function SingleEliminationBracket({ matches }: { matches: Match[] }) {
 }
 
 // Double Elimination Bracket
-function DoubleEliminationBracket({ matches }: { matches: Match[] }) {
+function DoubleEliminationBracket({ matches, onMatchClick }: { matches: Match[], onMatchClick?: (match: Match) => void }) {
   // Split matches into winners and losers bracket
   // For simplicity, assume first half is winners, second half is losers
   const midpoint = Math.ceil(matches.length / 2)
@@ -108,19 +109,19 @@ function DoubleEliminationBracket({ matches }: { matches: Match[] }) {
     <div className="space-y-8">
       <div>
         <h3 className="text-lg font-semibold mb-4">Winners Bracket</h3>
-        <SingleEliminationBracket matches={winnersBracket} />
+        <SingleEliminationBracket matches={winnersBracket} onMatchClick={onMatchClick} />
       </div>
 
       <div className="border-t pt-8">
         <h3 className="text-lg font-semibold mb-4">Losers Bracket</h3>
-        <SingleEliminationBracket matches={losersBracket} />
+        <SingleEliminationBracket matches={losersBracket} onMatchClick={onMatchClick} />
       </div>
     </div>
   )
 }
 
 // Round Robin Standings
-function RoundRobinStandings({ matches, players }: { matches: Match[], players: Array<{ player: Player }> }) {
+function RoundRobinStandings({ matches, players, onMatchClick }: { matches: Match[], players: Array<{ player: Player }>, onMatchClick?: (match: Match) => void }) {
   // Calculate standings
   const standings = players.map(({ player }) => {
     const playerMatches = matches.filter(m =>
@@ -209,32 +210,39 @@ function RoundRobinStandings({ matches, players }: { matches: Match[], players: 
           <CardTitle className="text-base">Alle kampe</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {matches.map((match, index) => (
-            <div key={match.id} className="border rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Kamp {index + 1}</span>
-                {match.result ? (
-                  <Badge variant="outline">
-                    {match.result.team1Score} - {match.result.team2Score}
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">Ikke spillet</Badge>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  {match.matchPlayers.filter(mp => mp.team === 1).map(mp => (
-                    <div key={mp.player.id}>{mp.player.name}</div>
-                  ))}
+          {matches.map((match, index) => {
+            const isClickable = !match.result && onMatchClick
+            return (
+              <div
+                key={match.id}
+                className={`border rounded-lg p-3 ${isClickable ? 'cursor-pointer hover:bg-accent transition-colors' : ''}`}
+                onClick={() => isClickable && onMatchClick(match)}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Kamp {index + 1}</span>
+                  {match.result ? (
+                    <Badge variant="outline">
+                      {match.result.team1Score} - {match.result.team2Score}
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Ikke spillet</Badge>
+                  )}
                 </div>
-                <div>
-                  {match.matchPlayers.filter(mp => mp.team === 2).map(mp => (
-                    <div key={mp.player.id}>{mp.player.name}</div>
-                  ))}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    {match.matchPlayers.filter(mp => mp.team === 1).map(mp => (
+                      <div key={mp.player.id}>{mp.player.name}</div>
+                    ))}
+                  </div>
+                  <div>
+                    {match.matchPlayers.filter(mp => mp.team === 2).map(mp => (
+                      <div key={mp.player.id}>{mp.player.name}</div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </CardContent>
       </Card>
     </div>
@@ -242,20 +250,24 @@ function RoundRobinStandings({ matches, players }: { matches: Match[], players: 
 }
 
 // Swiss System Standings
-function SwissStandings({ matches, players }: { matches: Match[], players: Array<{ player: Player }> }) {
+function SwissStandings({ matches, players, onMatchClick }: { matches: Match[], players: Array<{ player: Player }>, onMatchClick?: (match: Match) => void }) {
   // Swiss system is similar to Round Robin but uses standings component
-  return <RoundRobinStandings matches={matches} players={players} />
+  return <RoundRobinStandings matches={matches} players={players} onMatchClick={onMatchClick} />
 }
 
 // Bracket Match Component
-function BracketMatch({ match }: { match: Match }) {
+function BracketMatch({ match, onClick }: { match: Match, onClick?: (match: Match) => void }) {
   const team1 = match.matchPlayers.filter(mp => mp.team === 1)
   const team2 = match.matchPlayers.filter(mp => mp.team === 2)
   const hasResult = !!match.result
   const winner = hasResult ? match.result!.winningTeam : null
+  const isClickable = !hasResult && onClick && team1.length > 0 && team2.length > 0
 
   return (
-    <Card className={hasResult ? 'border-primary/50' : ''}>
+    <Card
+      className={`${hasResult ? 'border-primary/50' : ''} ${isClickable ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
+      onClick={() => isClickable && onClick(match)}
+    >
       <CardContent className="p-4 space-y-2">
         {/* Team 1 */}
         <div

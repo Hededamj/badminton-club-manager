@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
         startDate: new Date(validatedData.startDate),
         endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
         format: validatedData.format,
+        matchTypes: validatedData.matchTypes,
         description: validatedData.description || null,
         status: 'PLANNED',
       },

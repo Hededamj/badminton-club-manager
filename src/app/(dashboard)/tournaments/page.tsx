@@ -16,6 +16,7 @@ interface Tournament {
   startDate: string
   endDate: string | null
   format: string
+  matchTypes: string[]
   status: string
   description: string | null
   _count: {
@@ -28,6 +29,20 @@ const formatLabels: Record<string, string> = {
   DOUBLE_ELIMINATION: 'Double Elimination',
   ROUND_ROBIN: 'Round Robin',
   SWISS: 'Swiss',
+}
+
+const matchTypeLabels: Record<string, string> = {
+  MENS_DOUBLES: 'HD',
+  WOMENS_DOUBLES: 'DD',
+  MIXED_DOUBLES: 'MD',
+  SINGLES: 'Single',
+}
+
+const matchTypeColors: Record<string, string> = {
+  MENS_DOUBLES: 'bg-blue-500',
+  WOMENS_DOUBLES: 'bg-pink-500',
+  MIXED_DOUBLES: 'bg-purple-500',
+  SINGLES: 'bg-gray-500',
 }
 
 const statusLabels: Record<string, string> = {
@@ -141,6 +156,19 @@ export default function TournamentsPage() {
                       )}
                     </span>
                   </div>
+                  {tournament.matchTypes && tournament.matchTypes.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {tournament.matchTypes.map((type) => (
+                        <Badge
+                          key={type}
+                          variant="outline"
+                          className={`text-white border-0 ${matchTypeColors[type] || 'bg-gray-500'}`}
+                        >
+                          {matchTypeLabels[type] || type}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Users className="h-4 w-4" />
                     <span>{tournament._count.matches} kampe</span>

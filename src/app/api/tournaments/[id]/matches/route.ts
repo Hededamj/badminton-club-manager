@@ -83,18 +83,61 @@ export async function POST(
       return NextResponse.json({ error: 'Tournament not found' }, { status: 404 })
     }
 
-    if (tournament.tournamentPlayers.length < 2) {
+    const matchTypes = tournament.matchTypes || ['MENS_DOUBLES', 'WOMENS_DOUBLES', 'MIXED_DOUBLES']
+    const isSingles = matchTypes.includes('SINGLES')
+    const minPlayers = isSingles ? 2 : 4
+
+    if (tournament.tournamentPlayers.length < minPlayers) {
       return NextResponse.json(
-        { error: 'Need at least 2 players to generate tournament matches' },
+        { error: `Need at least ${minPlayers} players to generate tournament matches` },
         { status: 400 }
       )
     }
 
+    // Validate players have gender set for doubles tournaments
+    if (!isSingles) {
+      const playersWithoutGender = tournament.tournamentPlayers.filter(tp => !tp.player.gender)
+      if (playersWithoutGender.length > 0 && (matchTypes.includes('MENS_DOUBLES') || matchTypes.includes('WOMENS_DOUBLES') || matchTypes.includes('MIXED_DOUBLES'))) {
+        const names = playersWithoutGender.map(tp => tp.player.name).join(', ')
+        return NextResponse.json(
+          { error: `Følgende spillere mangler køn: ${names}. Køn er påkrævet for double turneringer.` },
+          { status: 400 }
+        )
+      }
+    }
+
     // Sort players by level for seeding (highest first)
-    const sortedPlayers = tournament.tournamentPlayers
+    const allPlayers = tournament.tournamentPlayers
       .map(tp => tp.player)
       .sort((a, b) => b.level - a.level)
 
+    // Filter players by gender for specific match types
+    const malePlayers = allPlayers.filter(p => p.gender === 'MALE')
+    const femalePlayers = allPlayers.filter(p => p.gender === 'FEMALE')
+
+    // Validate we have enough players for each match type
+    if (!isSingles) {
+      if (matchTypes.includes('MENS_DOUBLES') && malePlayers.length < 4) {
+        return NextResponse.json(
+          { error: `Herre Double kræver mindst 4 mænd (har ${malePlayers.length})` },
+          { status: 400 }
+        )
+      }
+      if (matchTypes.includes('WOMENS_DOUBLES') && femalePlayers.length < 4) {
+        return NextResponse.json(
+          { error: `Dame Double kræver mindst 4 kvinder (har ${femalePlayers.length})` },
+          { status: 400 }
+        )
+      }
+      if (matchTypes.includes('MIXED_DOUBLES') && (malePlayers.length < 2 || femalePlayers.length < 2)) {
+        return NextResponse.json(
+          { error: `Mix Double kræver mindst 2 mænd og 2 kvinder (har ${malePlayers.length} mænd og ${femalePlayers.length} kvinder)` },
+          { status: 400 }
+        )
+      }
+    }
+
+    const sortedPlayers = allPlayers
     const sortedPlayerIds = sortedPlayers.map(p => p.id)
 
     // Delete existing matches for this tournament
@@ -104,15 +147,17 @@ export async function POST(
 
     let pairings: { player1Id: string | null; player2Id: string | null }[] = []
 
-    // Generate matches based on format
+    // Generate matches based on format and match types
     if (tournament.format === 'ROUND_ROBIN') {
-      // For round robin with many players, use a limited approach:
-      // Each player plays with different partners against different opponents
-      // Rather than ALL possible team combinations (which would be thousands of matches)
-
-      if (sortedPlayerIds.length < 4) {
+      if (isSingles && sortedPlayerIds.length < 2) {
         return NextResponse.json(
-          { error: 'Round robin requires at least 4 players' },
+          { error: 'Round robin requires at least 2 players for singles' },
+          { status: 400 }
+        )
+      }
+      if (!isSingles && sortedPlayerIds.length < 4) {
+        return NextResponse.json(
+          { error: 'Round robin requires at least 4 players for doubles' },
           { status: 400 }
         )
       }
@@ -150,116 +195,128 @@ export async function POST(
     const createdMatches = []
 
     if (tournament.format === 'ROUND_ROBIN') {
-      // Simplified Round Robin for doubles badminton
-      // Each player plays multiple matches with different partners/opponents
-      // Limited to a reasonable number of matches
-
-      const numPlayers = sortedPlayerIds.length
-      const matchesPerPlayer = Math.min(Math.floor(numPlayers / 2), 8) // Max 8 matches per player
-
       const matchesToCreate: any[] = []
-      const playerMatchCount = new Map<string, number>()
-      const playerPartnerships = new Map<string, Set<string>>()
-      const playerOppositions = new Map<string, Set<string>>()
-
-      // Initialize tracking
-      sortedPlayerIds.forEach(id => {
-        playerMatchCount.set(id, 0)
-        playerPartnerships.set(id, new Set())
-        playerOppositions.set(id, new Set())
-      })
-
-      // Generate matches using a rotation algorithm
       let matchNumber = 1
       let courtNumber = 1
       const maxCourts = 6
-      const maxMatchesTotal = numPlayers * matchesPerPlayer / 4 // 4 players per match
 
-      for (let round = 0; round < maxMatchesTotal && matchesToCreate.length < 200; round++) {
-        // Try to find 4 players for a match
-        const availablePlayers = sortedPlayerIds.filter(id =>
-          (playerMatchCount.get(id) || 0) < matchesPerPlayer
-        )
+      if (isSingles) {
+        // Singles Round Robin - everyone plays everyone
+        const players = sortedPlayers
+        for (let i = 0; i < players.length; i++) {
+          for (let j = i + 1; j < players.length; j++) {
+            matchesToCreate.push({
+              tournamentId: tournament.id,
+              courtNumber: courtNumber,
+              matchNumber: matchNumber,
+              status: 'PENDING',
+              matchPlayers: {
+                create: [
+                  { playerId: players[i].id, team: 1, position: 1 },
+                  { playerId: players[j].id, team: 2, position: 1 },
+                ],
+              },
+            })
 
-        if (availablePlayers.length < 4) break
+            courtNumber = (courtNumber % maxCourts) + 1
+            if (courtNumber === 1) matchNumber++
+          }
+        }
+      } else {
+        // Doubles Round Robin - generate for each selected match type
+        for (const matchType of matchTypes) {
+          let playersForType: typeof sortedPlayers = []
 
-        // Pick 4 players trying to minimize repeated partnerships/oppositions
-        let bestMatch: string[] | null = null
-        let bestScore = Infinity
-
-        // Try a few random combinations
-        for (let attempt = 0; attempt < 10; attempt++) {
-          const shuffled = [...availablePlayers].sort(() => Math.random() - 0.5)
-          const fourPlayers = shuffled.slice(0, 4)
-
-          // Score based on previous partnerships/oppositions
-          let score = 0
-          const [p1, p2, p3, p4] = fourPlayers
-
-          // Check partnerships (p1-p2 and p3-p4)
-          if (playerPartnerships.get(p1)?.has(p2)) score += 10
-          if (playerPartnerships.get(p3)?.has(p4)) score += 10
-
-          // Check oppositions
-          if (playerOppositions.get(p1)?.has(p3)) score += 5
-          if (playerOppositions.get(p1)?.has(p4)) score += 5
-          if (playerOppositions.get(p2)?.has(p3)) score += 5
-          if (playerOppositions.get(p2)?.has(p4)) score += 5
-
-          if (score < bestScore) {
-            bestScore = score
-            bestMatch = fourPlayers
+          if (matchType === 'MENS_DOUBLES') {
+            playersForType = malePlayers
+          } else if (matchType === 'WOMENS_DOUBLES') {
+            playersForType = femalePlayers
+          } else if (matchType === 'MIXED_DOUBLES') {
+            playersForType = allPlayers // Will filter during pairing
           }
 
-          if (score === 0) break // Perfect match found
+          if (playersForType.length < 4) continue
+
+          // Generate limited matches for this type
+          const numPlayers = playersForType.length
+          const matchesPerPlayer = Math.min(Math.floor(numPlayers / 2), 6)
+          const playerMatchCount = new Map<string, number>()
+          const playerPartnerships = new Map<string, Set<string>>()
+          const playerOppositions = new Map<string, Set<string>>()
+
+          playersForType.forEach(p => {
+            playerMatchCount.set(p.id, 0)
+            playerPartnerships.set(p.id, new Set())
+            playerOppositions.set(p.id, new Set())
+          })
+
+          const maxMatchesForType = Math.min((numPlayers * matchesPerPlayer) / 4, 50)
+
+          for (let round = 0; round < maxMatchesForType * 3; round++) {
+            if (matchesToCreate.length >= 200) break
+
+            let availablePlayers = playersForType.filter(p =>
+              (playerMatchCount.get(p.id) || 0) < matchesPerPlayer
+            )
+
+            if (matchType === 'MIXED_DOUBLES') {
+              const availableMales = availablePlayers.filter(p => p.gender === 'MALE')
+              const availableFemales = availablePlayers.filter(p => p.gender === 'FEMALE')
+              if (availableMales.length < 2 || availableFemales.length < 2) break
+
+              // Pick 2 males and 2 females
+              const males = availableMales.slice(0, 2)
+              const females = availableFemales.slice(0, 2)
+              const matchPlayers = [males[0], females[0], males[1], females[1]]
+
+              matchesToCreate.push({
+                tournamentId: tournament.id,
+                courtNumber: courtNumber,
+                matchNumber: matchNumber,
+                status: 'PENDING',
+                matchPlayers: {
+                  create: [
+                    { playerId: matchPlayers[0].id, team: 1, position: 1 },
+                    { playerId: matchPlayers[1].id, team: 1, position: 2 },
+                    { playerId: matchPlayers[2].id, team: 2, position: 1 },
+                    { playerId: matchPlayers[3].id, team: 2, position: 2 },
+                  ],
+                },
+              })
+
+              matchPlayers.forEach(p => {
+                playerMatchCount.set(p.id, (playerMatchCount.get(p.id) || 0) + 1)
+              })
+            } else {
+              // HD or DD
+              if (availablePlayers.length < 4) break
+
+              const matchPlayers = availablePlayers.slice(0, 4)
+
+              matchesToCreate.push({
+                tournamentId: tournament.id,
+                courtNumber: courtNumber,
+                matchNumber: matchNumber,
+                status: 'PENDING',
+                matchPlayers: {
+                  create: [
+                    { playerId: matchPlayers[0].id, team: 1, position: 1 },
+                    { playerId: matchPlayers[1].id, team: 1, position: 2 },
+                    { playerId: matchPlayers[2].id, team: 2, position: 1 },
+                    { playerId: matchPlayers[3].id, team: 2, position: 2 },
+                  ],
+                },
+              })
+
+              matchPlayers.forEach(p => {
+                playerMatchCount.set(p.id, (playerMatchCount.get(p.id) || 0) + 1)
+              })
+            }
+
+            courtNumber = (courtNumber % maxCourts) + 1
+            if (courtNumber === 1) matchNumber++
+          }
         }
-
-        if (!bestMatch) break
-
-        const [p1, p2, p3, p4] = bestMatch
-
-        // Check if this should be mixed doubles
-        const players = bestMatch.map(id => sortedPlayers.find(p => p.id === id)!)
-        let matchPlayers = players
-        if (shouldBeMixedDoubles(players[0], players[1], players[2], players[3])) {
-          matchPlayers = arrangeMixedDoubles(players)
-        }
-
-        matchesToCreate.push({
-          tournamentId: tournament.id,
-          courtNumber: courtNumber,
-          matchNumber: matchNumber,
-          status: 'PENDING',
-          matchPlayers: {
-            create: [
-              { playerId: matchPlayers[0].id, team: 1, position: 1 },
-              { playerId: matchPlayers[1].id, team: 1, position: 2 },
-              { playerId: matchPlayers[2].id, team: 2, position: 1 },
-              { playerId: matchPlayers[3].id, team: 2, position: 2 },
-            ],
-          },
-        })
-
-        // Update tracking
-        matchPlayers.forEach(p => {
-          playerMatchCount.set(p.id, (playerMatchCount.get(p.id) || 0) + 1)
-        })
-        playerPartnerships.get(matchPlayers[0].id)?.add(matchPlayers[1].id)
-        playerPartnerships.get(matchPlayers[1].id)?.add(matchPlayers[0].id)
-        playerPartnerships.get(matchPlayers[2].id)?.add(matchPlayers[3].id)
-        playerPartnerships.get(matchPlayers[3].id)?.add(matchPlayers[2].id)
-
-        playerOppositions.get(matchPlayers[0].id)?.add(matchPlayers[2].id)
-        playerOppositions.get(matchPlayers[0].id)?.add(matchPlayers[3].id)
-        playerOppositions.get(matchPlayers[1].id)?.add(matchPlayers[2].id)
-        playerOppositions.get(matchPlayers[1].id)?.add(matchPlayers[3].id)
-        playerOppositions.get(matchPlayers[2].id)?.add(matchPlayers[0].id)
-        playerOppositions.get(matchPlayers[2].id)?.add(matchPlayers[1].id)
-        playerOppositions.get(matchPlayers[3].id)?.add(matchPlayers[0].id)
-        playerOppositions.get(matchPlayers[3].id)?.add(matchPlayers[1].id)
-
-        courtNumber = (courtNumber % maxCourts) + 1
-        if (courtNumber === 1) matchNumber++
       }
 
       // Batch create all matches
@@ -280,60 +337,139 @@ export async function POST(
       }
 
     } else if (tournament.format === 'SINGLE_ELIMINATION') {
-      // For single elimination, create team pairings from sorted players
-      // Players should be arranged in teams of 2 first
-      if (sortedPlayerIds.length < 4) {
-        return NextResponse.json(
-          { error: 'Need at least 4 players for single elimination doubles' },
-          { status: 400 }
-        )
-      }
+      let matchIndex = 0
 
-      // Create matches between pairs of teams
-      const numMatches = Math.floor(sortedPlayerIds.length / 4)
-      let playerIndex = 0
+      if (isSingles) {
+        // Singles elimination
+        const players = sortedPlayers
+        const numMatches = Math.floor(players.length / 2)
 
-      for (let i = 0; i < numMatches; i++) {
-        // Get 4 players for this match
-        let matchPlayers = [
-          sortedPlayers[playerIndex++],
-          sortedPlayers[playerIndex++],
-          sortedPlayers[playerIndex++],
-          sortedPlayers[playerIndex++],
-        ]
-
-        // Check if this should be mixed doubles and rearrange if needed
-        if (shouldBeMixedDoubles(matchPlayers[0], matchPlayers[1], matchPlayers[2], matchPlayers[3])) {
-          matchPlayers = arrangeMixedDoubles(matchPlayers)
-        }
-
-        const match = await prisma.match.create({
-          data: {
-            tournamentId: tournament.id,
-            courtNumber: (i % 6) + 1,
-            matchNumber: Math.floor(i / 6) + 1,
-            status: 'PENDING',
-            matchPlayers: {
-              create: [
-                { playerId: matchPlayers[0].id, team: 1, position: 1 },
-                { playerId: matchPlayers[1].id, team: 1, position: 2 },
-                { playerId: matchPlayers[2].id, team: 2, position: 1 },
-                { playerId: matchPlayers[3].id, team: 2, position: 2 },
-              ],
+        for (let i = 0; i < numMatches; i++) {
+          const match = await prisma.match.create({
+            data: {
+              tournamentId: tournament.id,
+              courtNumber: (matchIndex % 6) + 1,
+              matchNumber: Math.floor(matchIndex / 6) + 1,
+              status: 'PENDING',
+              matchPlayers: {
+                create: [
+                  { playerId: players[i * 2].id, team: 1, position: 1 },
+                  { playerId: players[i * 2 + 1].id, team: 2, position: 1 },
+                ],
+              },
             },
-          },
-          include: {
-            matchPlayers: {
-              include: {
-                player: {
-                  select: { id: true, name: true, level: true },
+            include: {
+              matchPlayers: {
+                include: {
+                  player: {
+                    select: { id: true, name: true, level: true },
+                  },
                 },
               },
             },
-          },
-        })
+          })
 
-        createdMatches.push(match)
+          createdMatches.push(match)
+          matchIndex++
+        }
+      } else {
+        // Doubles elimination - generate for each match type
+        for (const matchType of matchTypes) {
+          let playersForType: typeof sortedPlayers = []
+
+          if (matchType === 'MENS_DOUBLES') {
+            playersForType = malePlayers
+          } else if (matchType === 'WOMENS_DOUBLES') {
+            playersForType = femalePlayers
+          } else if (matchType === 'MIXED_DOUBLES') {
+            // For mixed doubles, pair males with females
+            const males = malePlayers
+            const females = femalePlayers
+            const numPairs = Math.min(Math.floor(males.length / 2), Math.floor(females.length / 2))
+
+            for (let i = 0; i < numPairs; i++) {
+              const matchPlayers = [
+                males[i * 2],
+                females[i * 2],
+                males[i * 2 + 1],
+                females[i * 2 + 1],
+              ]
+
+              const match = await prisma.match.create({
+                data: {
+                  tournamentId: tournament.id,
+                  courtNumber: (matchIndex % 6) + 1,
+                  matchNumber: Math.floor(matchIndex / 6) + 1,
+                  status: 'PENDING',
+                  matchPlayers: {
+                    create: [
+                      { playerId: matchPlayers[0].id, team: 1, position: 1 },
+                      { playerId: matchPlayers[1].id, team: 1, position: 2 },
+                      { playerId: matchPlayers[2].id, team: 2, position: 1 },
+                      { playerId: matchPlayers[3].id, team: 2, position: 2 },
+                    ],
+                  },
+                },
+                include: {
+                  matchPlayers: {
+                    include: {
+                      player: {
+                        select: { id: true, name: true, level: true },
+                      },
+                    },
+                  },
+                },
+              })
+
+              createdMatches.push(match)
+              matchIndex++
+            }
+            continue
+          }
+
+          if (playersForType.length < 4) continue
+
+          // HD or DD
+          const numMatches = Math.floor(playersForType.length / 4)
+
+          for (let i = 0; i < numMatches; i++) {
+            const matchPlayers = [
+              playersForType[i * 4],
+              playersForType[i * 4 + 1],
+              playersForType[i * 4 + 2],
+              playersForType[i * 4 + 3],
+            ]
+
+            const match = await prisma.match.create({
+              data: {
+                tournamentId: tournament.id,
+                courtNumber: (matchIndex % 6) + 1,
+                matchNumber: Math.floor(matchIndex / 6) + 1,
+                status: 'PENDING',
+                matchPlayers: {
+                  create: [
+                    { playerId: matchPlayers[0].id, team: 1, position: 1 },
+                    { playerId: matchPlayers[1].id, team: 1, position: 2 },
+                    { playerId: matchPlayers[2].id, team: 2, position: 1 },
+                    { playerId: matchPlayers[3].id, team: 2, position: 2 },
+                  ],
+                },
+              },
+              include: {
+                matchPlayers: {
+                  include: {
+                    player: {
+                      select: { id: true, name: true, level: true },
+                    },
+                  },
+                },
+              },
+            })
+
+            createdMatches.push(match)
+            matchIndex++
+          }
+        }
       }
     }
 

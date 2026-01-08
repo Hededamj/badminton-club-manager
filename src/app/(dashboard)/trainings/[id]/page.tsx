@@ -210,14 +210,15 @@ export default function TrainingDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <h1 className="text-xl md:text-2xl lg:text-4xl font-bold tracking-tight">
-              Træning {format(new Date(training.date), 'dd. MMMM yyyy', { locale: da })}
+              {training.name} - {format(new Date(training.date), 'd. MMM yyyy', { locale: da })}
             </h1>
             <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-2">
               <Badge variant={statusVariants[training.status]}>
                 {statusLabels[training.status]}
               </Badge>
               <span className="text-muted-foreground text-sm md:text-base">
-                {format(new Date(training.date), 'EEEE \'kl.\' HH:mm', { locale: da })}
+                {format(new Date(training.date), 'EEEE', { locale: da })}
+                {training.startTime && <> kl. {format(new Date(training.startTime), 'HH:mm', { locale: da })}</>}
               </span>
             </div>
           </div>
@@ -296,69 +297,6 @@ export default function TrainingDetailPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Tilmeldte spillere</CardTitle>
-            <CardDescription>
-              {training.trainingPlayers.length} spillere deltager i træningen
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {training.trainingPlayers.map(({ player }) => (
-                <div
-                  key={player.id}
-                  className="flex items-center justify-between p-2 rounded-lg border"
-                >
-                  <div>
-                    <p className="font-medium">{player.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Niveau: {Math.round(player.level)}
-                    </p>
-                  </div>
-                  {!player.isActive && (
-                    <Badge variant="secondary">Inaktiv</Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Detaljer</CardTitle>
-            <CardDescription>Træningsinformation</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Navn</span>
-              <span className="text-sm font-medium">{training.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Dato</span>
-              <span className="text-sm font-medium">
-                {format(new Date(training.date), 'dd. MMMM yyyy', { locale: da })}
-              </span>
-            </div>
-            {training.startTime && (
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Starttidspunkt</span>
-                <span className="text-sm font-medium">
-                  {format(new Date(training.startTime), 'HH:mm', { locale: da })}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Status</span>
-              <Badge variant={statusVariants[training.status]}>
-                {statusLabels[training.status]}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {error && (
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
@@ -366,34 +304,68 @@ export default function TrainingDetailPage() {
         </div>
       )}
 
-      {training.matches.length === 0 && training.status === 'PLANNED' && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">
-                Ingen kampe genereret endnu. Generer kampe for at starte træningen.
-              </p>
-              <Button onClick={handleGenerateMatches} disabled={generating}>
-                {generating ? 'Genererer kampe...' : 'Generer kampe'}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                Algoritmen optimerer for niveaubalance, variation i partnere og modstandere
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      {training.matches.length === 0 && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Tilmeldte spillere</CardTitle>
+              <CardDescription>
+                {training.trainingPlayers.length} spillere deltager i træningen
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {training.trainingPlayers.map(({ player }) => (
+                  <div
+                    key={player.id}
+                    className="flex items-center justify-between p-2 rounded-lg border"
+                  >
+                    <div>
+                      <p className="font-medium">{player.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Niveau: {Math.round(player.level)}
+                      </p>
+                    </div>
+                    {!player.isActive && (
+                      <Badge variant="secondary">Inaktiv</Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {training.status === 'PLANNED' && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">
+                    Ingen kampe genereret endnu. Generer kampe for at starte træningen.
+                  </p>
+                  <Button onClick={handleGenerateMatches} disabled={generating}>
+                    {generating ? 'Genererer kampe...' : 'Generer kampe'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Algoritmen optimerer for niveaubalance, variation i partnere og modstandere
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {training.matches.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <CardTitle className="text-base md:text-lg">Kampprogram</CardTitle>
-                <CardDescription className="text-xs md:text-sm">
-                  {training.matches.length} kampe genereret
-                </CardDescription>
-              </div>
+        <>
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="text-base md:text-lg">Kampprogram</CardTitle>
+                  <CardDescription className="text-xs md:text-sm">
+                    {training.matches.length} kampe genereret
+                  </CardDescription>
+                </div>
               <div className="flex gap-2">
                 <div className="flex rounded-lg border border-border">
                   <Button
@@ -626,6 +598,36 @@ export default function TrainingDetailPage() {
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tilmeldte spillere</CardTitle>
+            <CardDescription>
+              {training.trainingPlayers.length} spillere deltager i træningen
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {training.trainingPlayers.map(({ player }) => (
+                <div
+                  key={player.id}
+                  className="flex items-center justify-between p-2 rounded-lg border"
+                >
+                  <div>
+                    <p className="font-medium">{player.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Niveau: {Math.round(player.level)}
+                    </p>
+                  </div>
+                  {!player.isActive && (
+                    <Badge variant="secondary">Inaktiv</Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        </>
       )}
 
       {selectedMatch && (

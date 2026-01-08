@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowLeft, Trophy } from 'lucide-react'
 
 export default function NewTournamentPage() {
@@ -20,8 +21,41 @@ export default function NewTournamentPage() {
     startDate: '',
     endDate: '',
     format: 'SINGLE_ELIMINATION',
+    matchTypes: ['MENS_DOUBLES', 'WOMENS_DOUBLES', 'MIXED_DOUBLES'] as string[],
     description: '',
   })
+
+  const toggleMatchType = (type: string) => {
+    setFormData(prev => {
+      const currentTypes = prev.matchTypes
+      const hasSingles = type === 'SINGLES' || currentTypes.includes('SINGLES')
+      const isDoubles = type !== 'SINGLES'
+
+      // If trying to toggle singles
+      if (type === 'SINGLES') {
+        // If singles is already selected, uncheck it
+        if (currentTypes.includes('SINGLES')) {
+          return { ...prev, matchTypes: [] }
+        }
+        // Otherwise, set only singles
+        return { ...prev, matchTypes: ['SINGLES'] }
+      }
+
+      // If trying to toggle a doubles type while singles is selected
+      if (currentTypes.includes('SINGLES')) {
+        // Replace singles with this doubles type
+        return { ...prev, matchTypes: [type] }
+      }
+
+      // Normal toggle for doubles types
+      if (currentTypes.includes(type)) {
+        const newTypes = currentTypes.filter(t => t !== type)
+        return { ...prev, matchTypes: newTypes.length > 0 ? newTypes : prev.matchTypes }
+      } else {
+        return { ...prev, matchTypes: [...currentTypes, type] }
+      }
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,6 +67,7 @@ export default function NewTournamentPage() {
         name: formData.name,
         startDate: formData.startDate,
         format: formData.format,
+        matchTypes: formData.matchTypes,
       }
 
       if (formData.endDate) {
@@ -147,6 +182,74 @@ export default function NewTournamentPage() {
                   <SelectItem value="SWISS">Swiss</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Match types selection */}
+            <div className="space-y-3">
+              <Label>Kamptype *</Label>
+              <div className="rounded-lg border p-4 space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="mens_doubles"
+                    checked={formData.matchTypes.includes('MENS_DOUBLES')}
+                    onCheckedChange={() => toggleMatchType('MENS_DOUBLES')}
+                    disabled={loading || formData.matchTypes.includes('SINGLES')}
+                  />
+                  <label
+                    htmlFor="mens_doubles"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Herre Double (HD)
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="womens_doubles"
+                    checked={formData.matchTypes.includes('WOMENS_DOUBLES')}
+                    onCheckedChange={() => toggleMatchType('WOMENS_DOUBLES')}
+                    disabled={loading || formData.matchTypes.includes('SINGLES')}
+                  />
+                  <label
+                    htmlFor="womens_doubles"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Dame Double (DD)
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="mixed_doubles"
+                    checked={formData.matchTypes.includes('MIXED_DOUBLES')}
+                    onCheckedChange={() => toggleMatchType('MIXED_DOUBLES')}
+                    disabled={loading || formData.matchTypes.includes('SINGLES')}
+                  />
+                  <label
+                    htmlFor="mixed_doubles"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Mix Double (MD)
+                  </label>
+                </div>
+                <div className="border-t pt-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="singles"
+                      checked={formData.matchTypes.includes('SINGLES')}
+                      onCheckedChange={() => toggleMatchType('SINGLES')}
+                      disabled={loading}
+                    />
+                    <label
+                      htmlFor="singles"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      Single
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Du kan vælge flere double-typer (HD, DD, MD), men Single kan ikke kombineres med double-typer
+              </p>
             </div>
 
             {/* Tournament format descriptions */}

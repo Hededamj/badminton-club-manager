@@ -10,6 +10,23 @@ import { format } from 'date-fns'
 import { da } from 'date-fns/locale'
 import { AddTournamentPlayersDialog } from '@/components/tournament/add-tournament-players-dialog'
 import { TournamentBracket } from '@/components/tournament/tournament-bracket'
+import { MatchResultDialog } from '@/components/match/match-result-dialog'
+
+interface Match {
+  id: string
+  courtNumber: number
+  matchNumber: number
+  status: string
+  matchPlayers: Array<{
+    player: {
+      id: string
+      name: string
+      level: number
+    }
+    team: number
+  }>
+  result: any
+}
 
 interface Tournament {
   id: string
@@ -17,6 +34,7 @@ interface Tournament {
   startDate: string
   endDate: string | null
   format: string
+  matchTypes: string[]
   status: string
   description: string | null
   _count: {
@@ -31,21 +49,7 @@ interface Tournament {
       isActive: boolean
     }
   }>
-  matches: Array<{
-    id: string
-    courtNumber: number
-    matchNumber: number
-    status: string
-    matchPlayers: Array<{
-      player: {
-        id: string
-        name: string
-        level: number
-      }
-      team: number
-    }>
-    result: any
-  }>
+  matches: Match[]
 }
 
 const formatLabels: Record<string, string> = {
@@ -53,6 +57,20 @@ const formatLabels: Record<string, string> = {
   DOUBLE_ELIMINATION: 'Double Elimination',
   ROUND_ROBIN: 'Round Robin',
   SWISS: 'Swiss',
+}
+
+const matchTypeLabels: Record<string, string> = {
+  MENS_DOUBLES: 'Herre Double',
+  WOMENS_DOUBLES: 'Dame Double',
+  MIXED_DOUBLES: 'Mix Double',
+  SINGLES: 'Single',
+}
+
+const matchTypeColors: Record<string, string> = {
+  MENS_DOUBLES: 'bg-blue-500',
+  WOMENS_DOUBLES: 'bg-pink-500',
+  MIXED_DOUBLES: 'bg-purple-500',
+  SINGLES: 'bg-gray-500',
 }
 
 const statusLabels: Record<string, string> = {
@@ -77,6 +95,8 @@ export default function TournamentDetailPage() {
   const [error, setError] = useState('')
   const [generating, setGenerating] = useState(false)
   const [showAddPlayersDialog, setShowAddPlayersDialog] = useState(false)
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
+  const [showResultDialog, setShowResultDialog] = useState(false)
 
   useEffect(() => {
     fetchTournament()
@@ -183,6 +203,17 @@ export default function TournamentDetailPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Der opstod en fejl')
     }
+  }
+
+  const handleMatchClick = (match: Match) => {
+    setSelectedMatch(match)
+    setShowResultDialog(true)
+  }
+
+  const handleResultSuccess = () => {
+    setShowResultDialog(false)
+    setSelectedMatch(null)
+    fetchTournament()
   }
 
   if (loading) {
@@ -408,6 +439,21 @@ export default function TournamentDetailPage() {
               <span className="text-sm text-muted-foreground">Format</span>
               <span className="text-sm font-medium">{formatLabels[tournament.format]}</span>
             </div>
+            {tournament.matchTypes && tournament.matchTypes.length > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Kamptype</span>
+                <div className="flex gap-2 flex-wrap justify-end">
+                  {tournament.matchTypes.map((type) => (
+                    <Badge
+                      key={type}
+                      className={`text-white border-0 ${matchTypeColors[type] || 'bg-gray-500'}`}
+                    >
+                      {matchTypeLabels[type] || type}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Startdato</span>
               <span className="text-sm font-medium">
@@ -481,6 +527,7 @@ export default function TournamentDetailPage() {
               format={tournament.format as any}
               matches={tournament.matches}
               players={tournament.tournamentPlayers}
+              onMatchClick={handleMatchClick}
             />
           </CardContent>
         </Card>
@@ -490,6 +537,22 @@ export default function TournamentDetailPage() {
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
           {error}
         </div>
+      )}
+
+      {selectedMatch && (
+        <MatchResultDialog
+          open={showResultDialog}
+          onOpenChange={setShowResultDialog}
+          onSuccess={handleResultSuccess}
+          matchId={selectedMatch.id}
+          courtNumber={selectedMatch.courtNumber}
+          team1Players={selectedMatch.matchPlayers
+            .filter(mp => mp.team === 1)
+            .map(mp => mp.player)}
+          team2Players={selectedMatch.matchPlayers
+            .filter(mp => mp.team === 2)
+            .map(mp => mp.player)}
+        />
       )}
 
       <AddTournamentPlayersDialog
