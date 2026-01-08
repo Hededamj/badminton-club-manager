@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     let body
     try {
       body = await request.json()
-      console.log('Body parsed successfully')
+      console.log('Body parsed successfully:', JSON.stringify(body))
     } catch (parseError: unknown) {
       console.error('Body parse error:', parseError)
       return NextResponse.json(
@@ -140,12 +140,21 @@ export async function POST(request: NextRequest) {
     }
 
     const { username, password, teamId, teamName } = body
-    console.log('Request data:', { hasUsername: !!username, hasPassword: !!password, teamId, teamName })
+    console.log('Extracted data:', {
+      username: username ? `${username.substring(0, 3)}***` : 'MISSING',
+      password: password ? '***' : 'MISSING',
+      teamId,
+      teamName
+    })
 
     if (!username || !password || !teamId) {
-      console.error('Missing required fields')
+      console.error('Missing required fields:', {
+        hasUsername: !!username,
+        hasPassword: !!password,
+        hasTeamId: !!teamId
+      })
       return NextResponse.json(
-        { error: 'Manglende påkrævede felter' },
+        { error: 'Manglende brugernavn eller adgangskode', details: 'Username, password og teamId er påkrævet' },
         { status: 400 }
       )
     }
