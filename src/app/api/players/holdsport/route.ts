@@ -97,8 +97,13 @@ export async function GET(request: NextRequest) {
 // Import members from a specific team
 export async function POST(request: NextRequest) {
   try {
+    console.log('POST /api/players/holdsport - Starting import')
+
     const session = await getServerSession(authOptions)
+    console.log('Session:', session ? `User: ${session.user?.email}, Role: ${session.user?.role}` : 'No session')
+
     if (!session || session.user.role !== 'ADMIN') {
+      console.error('Unauthorized access attempt:', session?.user?.email)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -246,9 +251,17 @@ export async function POST(request: NextRequest) {
       total: members.length,
     })
   } catch (error) {
-    console.error('Holdsport API error:', error)
+    console.error('Holdsport API POST error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: JSON.stringify(error, null, 2)
+    })
     return NextResponse.json(
-      { error: 'Der opstod en fejl ved hentning af spillere' },
+      {
+        error: 'Der opstod en fejl ved hentning af spillere',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
