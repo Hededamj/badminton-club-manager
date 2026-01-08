@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     const teams: HoldsportTeam[] = await response.json()
 
     return NextResponse.json(teams)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Holdsport API error:', error)
     return NextResponse.json(
       { error: 'Der opstod en fejl ved forbindelse til Holdsport' },
@@ -114,10 +114,11 @@ export async function POST(request: NextRequest) {
     try {
       session = await getServerSession(authOptions)
       console.log('Session retrieved:', session ? `User: ${session.user?.email}, Role: ${session.user?.role}` : 'No session')
-    } catch (sessionError) {
+    } catch (sessionError: unknown) {
       console.error('Session error:', sessionError)
+      const errorMessage = sessionError instanceof Error ? sessionError.message : 'Unknown'
       return NextResponse.json(
-        { error: 'Session fejl', details: sessionError instanceof Error ? sessionError.message : 'Unknown' },
+        { error: 'Session fejl', details: errorMessage },
         { status: 500 }
       )
     }
@@ -132,10 +133,11 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json()
       console.log('Body parsed successfully')
-    } catch (parseError) {
+    } catch (parseError: unknown) {
       console.error('Body parse error:', parseError)
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown'
       return NextResponse.json(
-        { error: 'JSON parse fejl', details: parseError instanceof Error ? parseError.message : 'Unknown' },
+        { error: 'JSON parse fejl', details: errorMessage },
         { status: 400 }
       )
     }
@@ -172,7 +174,7 @@ export async function POST(request: NextRequest) {
       )
       clearTimeout(timeoutId)
       console.log('Holdsport API response status:', response.status)
-    } catch (fetchError) {
+    } catch (fetchError: unknown) {
       console.error('Holdsport fetch error:', fetchError)
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         return NextResponse.json(
@@ -180,8 +182,9 @@ export async function POST(request: NextRequest) {
           { status: 504 }
         )
       }
+      const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown'
       return NextResponse.json(
-        { error: 'Kunne ikke forbinde til Holdsport API', details: fetchError instanceof Error ? fetchError.message : 'Unknown' },
+        { error: 'Kunne ikke forbinde til Holdsport API', details: errorMessage },
         { status: 503 }
       )
     }
@@ -216,9 +219,10 @@ export async function POST(request: NextRequest) {
         },
       })
       console.log(`Team created/updated: ${team.name} (ID: ${team.id})`)
-    } catch (dbError) {
+    } catch (dbError: unknown) {
       console.error('Database error creating team:', dbError)
-      throw new Error(`Database fejl: ${dbError instanceof Error ? dbError.message : 'Unknown'}`)
+      const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown'
+      throw new Error(`Database fejl: ${errorMessage}`)
     }
 
     // Import players and associate with team
@@ -293,7 +297,7 @@ export async function POST(request: NextRequest) {
             playerId: player.id,
           },
         })
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(`Error importing player ${playerName}:`, error)
         skipped++
       }
@@ -312,17 +316,18 @@ export async function POST(request: NextRequest) {
       skipped,
       total: members.length,
     })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Holdsport API POST error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
+      message: errorMessage,
       stack: error instanceof Error ? error.stack : undefined,
       error: JSON.stringify(error, null, 2)
     })
     return NextResponse.json(
       {
         error: 'Der opstod en fejl ved hentning af spillere',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: errorMessage
       },
       { status: 500 }
     )
