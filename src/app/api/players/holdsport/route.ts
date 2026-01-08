@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
 
@@ -96,6 +96,10 @@ export async function GET(request: NextRequest) {
 
 // Import members from a specific team
 export async function POST(request: NextRequest) {
+  console.log('=== POST /api/players/holdsport called ===')
+  console.log('Request URL:', request.url)
+  console.log('Request method:', request.method)
+
   try {
     console.log('POST /api/players/holdsport - Starting import')
 
