@@ -100,8 +100,15 @@ export async function POST(request: NextRequest) {
   console.log('Request URL:', request.url)
   console.log('Request method:', request.method)
 
+  // TEMPORARY: Return immediately to test if route is reachable
+  return NextResponse.json({
+    success: false,
+    error: 'TEST MODE: Route is reachable',
+    timestamp: new Date().toISOString()
+  })
+
   try {
-    console.log('POST /api/players/holdsport - Starting import')
+    console.log('Step 1: Getting session...')
 
     let session
     try {
@@ -120,8 +127,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('Parsing request body...')
-    const body = await request.json()
+    console.log('Step 2: Parsing request body...')
+    let body
+    try {
+      body = await request.json()
+      console.log('Body parsed successfully')
+    } catch (parseError) {
+      console.error('Body parse error:', parseError)
+      return NextResponse.json(
+        { error: 'JSON parse fejl', details: parseError instanceof Error ? parseError.message : 'Unknown' },
+        { status: 400 }
+      )
+    }
+
     const { username, password, teamId, teamName } = body
     console.log('Request data:', { hasUsername: !!username, hasPassword: !!password, teamId, teamName })
 
@@ -134,18 +152,39 @@ export async function POST(request: NextRequest) {
     }
 
     const auth = Buffer.from(`${username}:${password}`).toString('base64')
-    console.log('Fetching members from Holdsport API...')
+    console.log('Step 3: Fetching members from Holdsport API...')
+    console.log('Team ID:', teamId)
 
-    // Fetch team members from Holdsport
-    const response = await fetch(
-      `https://api.holdsport.dk/v1/teams/${teamId}/members`,
-      {
-        headers: {
-          'Authorization': `Basic ${auth}`,
-        },
+    // Fetch team members from Holdsport with timeout
+    let response
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
+      response = await fetch(
+        `https://api.holdsport.dk/v1/teams/${teamId}/members`,
+        {
+          headers: {
+            'Authorization': `Basic ${auth}`,
+          },
+          signal: controller.signal,
+        }
+      )
+      clearTimeout(timeoutId)
+      console.log('Holdsport API response status:', response.status)
+    } catch (fetchError) {
+      console.error('Holdsport fetch error:', fetchError)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        return NextResponse.json(
+          { error: 'Holdsport API timeout - prøv igen' },
+          { status: 504 }
+        )
       }
-    )
-    console.log('Holdsport API response status:', response.status)
+      return NextResponse.json(
+        { error: 'Kunne ikke forbinde til Holdsport API', details: fetchError instanceof Error ? fetchError.message : 'Unknown' },
+        { status: 503 }
+      )
+    }
 
     if (!response.ok) {
       if (response.status === 401) {
