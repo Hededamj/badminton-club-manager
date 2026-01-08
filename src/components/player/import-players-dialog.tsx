@@ -196,12 +196,22 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
   }
 
   const handleHoldsportImport = async () => {
+    console.log('=== handleHoldsportImport called ===')
+    console.log('State values:', {
+      selectedTeamId,
+      holdsportUsername,
+      holdsportPassword,
+      hasUsername: !!holdsportUsername,
+      hasPassword: !!holdsportPassword,
+    })
+
     if (!selectedTeamId) {
       setError('Vælg venligst et hold')
       return
     }
 
     if (!holdsportUsername || !holdsportPassword) {
+      console.error('Missing credentials in state!')
       setError('Brugernavn og adgangskode mangler. Indtast dem igen.')
       return
     }
