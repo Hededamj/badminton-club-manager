@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,9 +43,6 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
   const [holdsportTeams, setHoldsportTeams] = useState<HoldsportTeam[]>([])
   const [selectedTeamId, setSelectedTeamId] = useState('')
   const [fetchingTeams, setFetchingTeams] = useState(false)
-
-  // Store credentials in ref to preserve them
-  const credentialsRef = useRef({ username: '', password: '' })
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -167,12 +164,6 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
       return
     }
 
-    // Store credentials in ref for later use
-    credentialsRef.current = {
-      username: holdsportUsername,
-      password: holdsportPassword
-    }
-
     try {
       setFetchingTeams(true)
       setError('')
@@ -210,16 +201,7 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
       return
     }
 
-    // Use credentials from ref (preserved from step 1)
-    const { username, password } = credentialsRef.current
-
-    console.log('Starting Holdsport import...', {
-      hasUsername: !!username,
-      hasPassword: !!password,
-      teamId: selectedTeamId,
-    })
-
-    if (!username || !password) {
+    if (!holdsportUsername || !holdsportPassword) {
       setError('Brugernavn og adgangskode mangler. Indtast dem igen.')
       return
     }
@@ -233,15 +215,13 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
       const selectedTeam = holdsportTeams.find(t => t.id === selectedTeamId)
       const teamName = selectedTeam?.name || 'Unavngivet hold'
 
-      console.log('Sending import request...')
-
       // Import team and members from Holdsport (creates team + players + associations in one call)
       const fetchRes = await fetch('/api/players/holdsport', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username,
-          password,
+          username: holdsportUsername,
+          password: holdsportPassword,
           teamId: selectedTeamId,
           teamName,
         }),
