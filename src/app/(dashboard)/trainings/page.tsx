@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { TrainingsListRedesign } from '@/components/training/trainings-list-redesign'
+import { TrainingsListMinimal } from '@/components/training/trainings-list-minimal'
 import { ImportHoldsportTrainingsDialog } from '@/components/training/import-holdsport-trainings-dialog'
 
 interface Training {
@@ -25,14 +25,14 @@ interface Training {
 export default function TrainingsPage() {
   const [trainings, setTrainings] = useState<Training[]>([])
   const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState('ALL')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [showImportDialog, setShowImportDialog] = useState(false)
 
   const fetchTrainings = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
-      if (statusFilter !== 'ALL') params.append('status', statusFilter)
+      if (statusFilter !== 'all') params.append('status', statusFilter)
 
       const res = await fetch(`/api/trainings?${params}`)
       if (res.ok) {
@@ -52,7 +52,7 @@ export default function TrainingsPage() {
 
   return (
     <>
-      <TrainingsListRedesign
+      <TrainingsListMinimal
         trainings={trainings}
         loading={loading}
         statusFilter={statusFilter}
