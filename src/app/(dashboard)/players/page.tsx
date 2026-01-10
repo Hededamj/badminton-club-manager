@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { PlayersListMinimal } from '@/components/player/players-list-minimal'
+import { PlayersListPremium } from '@/components/player/players-list-premium'
 import { AddPlayerDialog } from '@/components/player/add-player-dialog'
 import { ImportPlayersDialog } from '@/components/player/import-players-dialog'
 import { EditPlayerDialog } from '@/components/player/edit-player-dialog'
@@ -73,7 +73,7 @@ export default function PlayersPage() {
 
   return (
     <>
-      <PlayersListMinimal
+      <PlayersListPremium
         players={players}
         loading={loading}
         search={search}
