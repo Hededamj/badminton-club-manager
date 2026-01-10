@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { TrainingsListRedesign } from '@/components/training/trainings-list-redesign'
+import { TrainingsListClean } from '@/components/training/trainings-list-clean'
 import { ImportHoldsportTrainingsDialog } from '@/components/training/import-holdsport-trainings-dialog'
 
 interface Training {
@@ -52,7 +52,7 @@ export default function TrainingsPage() {
 
   return (
     <>
-      <TrainingsListRedesign
+      <TrainingsListClean
         trainings={trainings}
         loading={loading}
         statusFilter={statusFilter}

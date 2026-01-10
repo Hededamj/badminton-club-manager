@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { DashboardRedesign } from '@/components/dashboard/dashboard-redesign'
+import { DashboardClean } from '@/components/dashboard/dashboard-clean'
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null)
@@ -33,5 +33,5 @@ export default function DashboardPage() {
     )
   }
 
-  return <DashboardRedesign stats={stats} />
+  return <DashboardClean stats={stats} />
 }
