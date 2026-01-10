@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { PlayerDetailMinimal } from '@/components/player/player-detail-minimal'
+import { PlayerDetailPremium } from '@/components/player/player-detail-premium'
 import { EditPlayerDialog } from '@/components/player/edit-player-dialog'
 
 interface Player {
@@ -92,7 +92,7 @@ export default function PlayerDetailPage() {
 
   return (
     <>
-      <PlayerDetailMinimal
+      <PlayerDetailPremium
         player={player}
         onEditClick={() => setEditDialogOpen(true)}
       />

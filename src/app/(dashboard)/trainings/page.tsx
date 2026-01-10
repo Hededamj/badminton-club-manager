@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { TrainingsListMinimal } from '@/components/training/trainings-list-minimal'
+import { TrainingsListPremium } from '@/components/training/trainings-list-premium'
 import { ImportHoldsportTrainingsDialog } from '@/components/training/import-holdsport-trainings-dialog'
 
 interface Training {
@@ -52,7 +52,7 @@ export default function TrainingsPage() {
 
   return (
     <>
-      <TrainingsListMinimal
+      <TrainingsListPremium
         trainings={trainings}
         loading={loading}
         statusFilter={statusFilter}
