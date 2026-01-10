@@ -1,13 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Plus, Calendar as CalendarIcon, Users, Filter, Download } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { format } from 'date-fns'
-import { da } from 'date-fns/locale'
+import { TrainingsListRedesign } from '@/components/training/trainings-list-redesign'
 import { ImportHoldsportTrainingsDialog } from '@/components/training/import-holdsport-trainings-dialog'
 
 interface Training {
@@ -28,22 +22,7 @@ interface Training {
   }
 }
 
-const statusLabels: Record<string, string> = {
-  PLANNED: 'Planlagt',
-  IN_PROGRESS: 'I gang',
-  COMPLETED: 'Afsluttet',
-  CANCELLED: 'Aflyst',
-}
-
-const statusVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
-  PLANNED: 'default',
-  IN_PROGRESS: 'secondary',
-  COMPLETED: 'outline',
-  CANCELLED: 'outline',
-}
-
 export default function TrainingsPage() {
-  const router = useRouter()
   const [trainings, setTrainings] = useState<Training[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('ALL')
@@ -72,112 +51,20 @@ export default function TrainingsPage() {
   }, [statusFilter])
 
   return (
-    <div className="space-y-6 md:space-y-8">
-      <div>
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">Træninger</h1>
-        <p className="text-muted-foreground mt-2 text-sm md:text-base">
-          Administrer træningssessioner og kampe
-        </p>
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm"
-          >
-            <option value="ALL">Alle træninger</option>
-            <option value="PLANNED">Planlagt</option>
-            <option value="IN_PROGRESS">I gang</option>
-            <option value="COMPLETED">Afsluttet</option>
-            <option value="CANCELLED">Aflyst</option>
-          </select>
-        </div>
-
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="outline" onClick={() => setShowImportDialog(true)} className="flex-1 sm:flex-initial">
-            <Download className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Importer fra Holdsport</span>
-            <span className="sm:hidden">Importer</span>
-          </Button>
-          <Button onClick={() => router.push('/trainings/new')} className="flex-1 sm:flex-initial">
-            <Plus className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Opret træning</span>
-            <span className="sm:hidden">Opret</span>
-          </Button>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Indlæser...</p>
-        </div>
-      ) : trainings.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
-              <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                Ingen træninger fundet. Opret din første træning for at komme i gang.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {trainings.map((training) => (
-            <Card
-              key={training.id}
-              className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => router.push(`/trainings/${training.id}`)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <CalendarIcon className="h-5 w-5" />
-                      {format(new Date(training.date), 'dd MMM yyyy', { locale: da })}
-                    </CardTitle>
-                    <CardDescription className="mt-1">
-                      {format(new Date(training.date), 'EEEE', { locale: da })}
-                    </CardDescription>
-                  </div>
-                  <Badge variant={statusVariants[training.status]}>
-                    {statusLabels[training.status]}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Baner:</span>
-                    <span className="font-medium">{training.courts}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      Spillere:
-                    </span>
-                    <span className="font-medium">{training.trainingPlayers.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Kampe:</span>
-                    <span className="font-medium">{training._count.matches}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+    <>
+      <TrainingsListRedesign
+        trainings={trainings}
+        loading={loading}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        onImportClick={() => setShowImportDialog(true)}
+      />
 
       <ImportHoldsportTrainingsDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
         onSuccess={fetchTrainings}
       />
-    </div>
+    </>
   )
 }

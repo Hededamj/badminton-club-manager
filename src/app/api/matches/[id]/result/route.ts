@@ -16,16 +16,34 @@ export async function POST(
     }
 
     const body = await req.json()
-    const { team1Score, team2Score } = body
+    const { team1Score, team2Score, winningTeam } = body
 
-    if (
-      typeof team1Score !== 'number' ||
-      typeof team2Score !== 'number' ||
-      team1Score < 0 ||
-      team2Score < 0
-    ) {
+    // Support both detailed scores and simple winner selection
+    let finalTeam1Score: number
+    let finalTeam2Score: number
+
+    if (team1Score !== undefined && team2Score !== undefined) {
+      // Detailed scores provided
+      if (
+        typeof team1Score !== 'number' ||
+        typeof team2Score !== 'number' ||
+        team1Score < 0 ||
+        team2Score < 0
+      ) {
+        return NextResponse.json(
+          { error: 'Invalid scores' },
+          { status: 400 }
+        )
+      }
+      finalTeam1Score = team1Score
+      finalTeam2Score = team2Score
+    } else if (winningTeam === 1 || winningTeam === 2) {
+      // Simple winner selection - use default scores
+      finalTeam1Score = winningTeam === 1 ? 21 : 0
+      finalTeam2Score = winningTeam === 2 ? 21 : 0
+    } else {
       return NextResponse.json(
-        { error: 'Invalid scores' },
+        { error: 'Either provide scores or specify winning team' },
         { status: 400 }
       )
     }
@@ -59,7 +77,7 @@ export async function POST(
     // Calculate ELO changes
     const team1Levels = team1Players.map(mp => mp.player.level)
     const team2Levels = team2Players.map(mp => mp.player.level)
-    const team1Won = team1Score > team2Score
+    const team1Won = finalTeam1Score > finalTeam2Score
 
     const eloChanges = calculateMatchEloChanges(
       team1Levels,
@@ -99,14 +117,14 @@ export async function POST(
         where: { matchId: match.id },
         create: {
           matchId: match.id,
-          team1Score,
-          team2Score,
+          team1Score: finalTeam1Score,
+          team2Score: finalTeam2Score,
           winningTeam: team1Won ? 1 : 2,
           levelChange,
         },
         update: {
-          team1Score,
-          team2Score,
+          team1Score: finalTeam1Score,
+          team2Score: finalTeam2Score,
           winningTeam: team1Won ? 1 : 2,
           levelChange,
         },
@@ -148,6 +166,23 @@ export async function POST(
         }
       }
     })
+
+    // Check if all matches in this training have results now
+    if (match.trainingId) {
+      const allMatches = await prisma.match.findMany({
+        where: { trainingId: match.trainingId },
+        include: { result: true },
+      })
+
+      const allHaveResults = allMatches.every(m => m.result !== null)
+      if (allHaveResults) {
+        // Auto-set training status to COMPLETED
+        await prisma.training.update({
+          where: { id: match.trainingId },
+          data: { status: 'COMPLETED' },
+        })
+      }
+    }
 
     return NextResponse.json({
       success: true,

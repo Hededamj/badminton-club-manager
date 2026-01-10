@@ -161,6 +161,12 @@ export async function POST(
       })
     )
 
+    // Auto-set training status to IN_PROGRESS
+    await prisma.training.update({
+      where: { id: training.id },
+      data: { status: 'IN_PROGRESS' },
+    })
+
     return NextResponse.json({
       success: true,
       matchesGenerated: createdMatches.length,

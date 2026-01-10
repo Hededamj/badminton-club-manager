@@ -246,6 +246,11 @@ export function ImportPlayersDialog({ open, onOpenChange, onSuccess }: ImportPla
 
       const data = await fetchRes.json()
 
+      // Save credentials for auto-sync
+      localStorage.setItem('holdsport_username', holdsportUsername)
+      localStorage.setItem('holdsport_password', holdsportPassword)
+      localStorage.setItem('holdsport_teamId', selectedTeamId)
+
       // Set result - the API already imported to database
       setResult({
         imported: data.imported,

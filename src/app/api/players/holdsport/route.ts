@@ -12,11 +12,10 @@ interface HoldsportTeam {
 }
 
 interface HoldsportMember {
-  id: string
-  first_name: string
-  last_name: string
-  email: string
-  mobile: string
+  id: number
+  firstname: string
+  lastname: string
+  gender?: string // 'M' or 'F' or 'male' or 'female'
   role: number
 }
 
@@ -139,11 +138,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log('Step 2.5: Extracting data from body...')
     const { username, password, teamId, teamName } = body
+    console.log('Step 2.6: Data extracted, converting teamId...')
+
+    // Convert teamId to string (Holdsport API returns numbers, but Prisma expects string)
+    const teamIdStr = String(teamId)
+    console.log('Step 2.7: TeamId converted to string:', teamIdStr)
+
     console.log('Extracted data:', {
       username: username ? `${username.substring(0, 3)}***` : 'MISSING',
       password: password ? '***' : 'MISSING',
-      teamId,
+      teamId: teamIdStr,
       teamName
     })
 
@@ -161,7 +167,7 @@ export async function POST(request: NextRequest) {
 
     const auth = Buffer.from(`${username}:${password}`).toString('base64')
     console.log('Step 3: Fetching members from Holdsport API...')
-    console.log('Team ID:', teamId)
+    console.log('Team ID:', teamIdStr)
 
     // Fetch team members from Holdsport with timeout
     let response
@@ -170,7 +176,7 @@ export async function POST(request: NextRequest) {
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
       response = await fetch(
-        `https://api.holdsport.dk/v1/teams/${teamId}/members`,
+        `https://api.holdsport.dk/v1/teams/${teamIdStr}/members`,
         {
           headers: {
             'Authorization': `Basic ${auth}`,
@@ -206,21 +212,26 @@ export async function POST(request: NextRequest) {
     }
 
     const members: HoldsportMember[] = await response.json()
-    console.log(`Fetched ${members.length} members from Holdsport team ${teamId}`)
+    console.log(`Fetched ${members.length} members from Holdsport team ${teamIdStr}`)
+
+    // Log first member to see all available fields
+    if (members.length > 0) {
+      console.log('Sample member fields:', JSON.stringify(members[0], null, 2))
+    }
 
     // Create or update team in database
     console.log('Creating/updating team in database...')
     let team
     try {
       team = await prisma.team.upsert({
-        where: { holdsportId: teamId },
+        where: { holdsportId: teamIdStr },
         update: {
-          name: teamName || `Team ${teamId}`,
+          name: teamName || `Team ${teamIdStr}`,
           isActive: true,
         },
         create: {
-          name: teamName || `Team ${teamId}`,
-          holdsportId: teamId,
+          name: teamName || `Team ${teamIdStr}`,
+          holdsportId: teamIdStr,
           isActive: true,
         },
       })
@@ -236,56 +247,69 @@ export async function POST(request: NextRequest) {
     let skipped = 0
 
     for (const member of members) {
-      const playerName = `${member.first_name || ''} ${member.last_name || ''}`.trim()
+      const playerName = `${member.firstname || ''} ${member.lastname || ''}`.trim()
 
       if (playerName.length < 2) {
+        console.log(`Skipping player with short name: "${playerName}"`)
         skipped++
         continue
       }
 
       try {
-        // Check if player exists by holdsportId or email
-        let existingPlayer = null
-        if (member.id) {
-          existingPlayer = await prisma.player.findUnique({
-            where: { holdsportId: member.id },
-          })
+        // Convert member.id to string (Holdsport API returns number, Prisma expects string)
+        const memberIdStr = String(member.id)
+
+        // Map gender from Holdsport to our enum
+        let gender: 'MALE' | 'FEMALE' | null = null
+        if (member.gender) {
+          const genderLower = member.gender.toLowerCase()
+          if (genderLower === 'm' || genderLower === 'male' || genderLower === 'mand') {
+            gender = 'MALE'
+          } else if (genderLower === 'f' || genderLower === 'female' || genderLower === 'kvinde') {
+            gender = 'FEMALE'
+          }
         }
-        if (!existingPlayer && member.email && member.email.trim()) {
-          existingPlayer = await prisma.player.findUnique({
-            where: { email: member.email.trim() },
-          })
-        }
+
+        console.log(`Processing player: ${playerName}`)
+        console.log(`  - holdsportId: ${memberIdStr}`)
+        console.log(`  - member.gender from Holdsport: "${member.gender}"`)
+        console.log(`  - mapped gender: ${gender || 'N/A'}`)
+
+        // Check if player exists by holdsportId only (GDPR: ikke import email/telefon)
+        const existingPlayer = await prisma.player.findUnique({
+          where: { holdsportId: memberIdStr },
+        })
+        console.log(`  Found by holdsportId: ${!!existingPlayer}`)
 
         let player
         if (existingPlayer) {
-          // Update existing player
+          // Update existing player - kun navn, gender og holdsportId (IKKE email/telefon)
+          console.log(`  Updating existing player: ${existingPlayer.name}`)
           player = await prisma.player.update({
             where: { id: existingPlayer.id },
             data: {
               name: playerName,
-              email: member.email && member.email.trim() ? member.email.trim() : existingPlayer.email,
-              phone: member.mobile && member.mobile.trim() ? member.mobile.trim() : existingPlayer.phone,
-              holdsportId: member.id,
+              holdsportId: memberIdStr,
               isActive: true,
+              gender: gender, // Always update gender (even if null) to sync with Holdsport
             },
           })
           updated++
+          console.log(`  Successfully updated player with gender: ${gender || 'NULL'}`)
         } else {
-          // Create new player
-          const createData: any = {
-            name: playerName,
-            holdsportId: member.id,
-            level: 1500,
-            isActive: true,
-          }
-          if (member.email && member.email.trim()) createData.email = member.email.trim()
-          if (member.mobile && member.mobile.trim()) createData.phone = member.mobile.trim()
-
+          // Create new player - kun navn, niveau og gender (IKKE email/telefon)
+          console.log(`  Creating new player`)
           player = await prisma.player.create({
-            data: createData,
+            data: {
+              name: playerName,
+              holdsportId: memberIdStr,
+              level: 1500,
+              isActive: true,
+              gender: gender,
+            },
           })
           imported++
+          console.log(`  Successfully created player`)
         }
 
         // Associate player with team (create TeamPlayer if doesn't exist)

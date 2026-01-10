@@ -4,15 +4,16 @@ import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
 
 interface HoldsportActivity {
-  id: string
+  id: number
   name: string
-  date: string
-  start_time: string | null
-  end_time: string | null
-  attending: Array<{
-    user_id: string
-    first_name: string
-    last_name: string
+  starttime: string | null
+  endtime: string | null
+  activities_users: Array<{
+    id: number
+    name: string
+    user_id: number
+    status: string
+    status_code: number  // 1 = Tilmeldt, 2 = Afmeldt
   }>
 }
 
@@ -44,9 +45,6 @@ export async function GET(request: NextRequest) {
     // Fetch activities from Holdsport
     // Get activities from today and 7 days forward
     const today = new Date()
-    const sevenDaysForward = new Date()
-    sevenDaysForward.setDate(today.getDate() + 7)
-
     const activities: HoldsportActivity[] = []
 
     // Holdsport API requires fetching activities by date
@@ -67,9 +65,15 @@ export async function GET(request: NextRequest) {
       console.log(`Response for ${dateStr}: status=${response.status}`)
 
       if (response.ok) {
-        const dayActivities = await response.json()
+        const dayActivities: HoldsportActivity[] = await response.json()
         console.log(`Activities on ${dateStr}:`, dayActivities.length)
-        activities.push(...dayActivities)
+
+        // Filter to only include activities with attendees
+        const activitiesWithAttendees = dayActivities.filter(act =>
+          act.activities_users && act.activities_users.length > 0
+        )
+
+        activities.push(...activitiesWithAttendees)
       } else {
         const errorText = await response.text()
         console.error(`Error fetching activities for ${dateStr}: ${response.status} - ${errorText}`)
@@ -78,30 +82,31 @@ export async function GET(request: NextRequest) {
 
     console.log(`Total activities fetched: ${activities.length}`)
 
-    // Transform to our format - filter out activities with invalid dates
+    // Transform to our format
     const trainings = activities
-      .filter(activity => {
-        if (!activity.date) {
-          console.warn('Activity missing date:', activity.id, activity.name)
-          return false
-        }
-        try {
-          new Date(activity.date)
-          return true
-        } catch (e) {
-          console.warn('Activity has invalid date:', activity.id, activity.date)
-          return false
+      .map(activity => {
+        // Extract date from starttime (format: "2026-01-13T19:15:00+01:00")
+        const activityDate = activity.starttime ? activity.starttime.split('T')[0] : null
+
+        // Only include users who are registered (status_code = 1)
+        const attendingPlayers = (activity.activities_users || [])
+          .filter(user => user.status_code === 1)
+
+        // Extract time from starttime and endtime
+        const startTime = activity.starttime ? activity.starttime.split('T')[1]?.substring(0, 5) : null // "19:15"
+        const endTime = activity.endtime ? activity.endtime.split('T')[1]?.substring(0, 5) : null // "21:00"
+
+        return {
+          holdsportId: String(activity.id),
+          name: activity.name || 'Unavngivet træning',
+          date: activityDate,
+          startTime,
+          endTime,
+          playerCount: attendingPlayers.length,
+          players: attendingPlayers,
         }
       })
-      .map(activity => ({
-        holdsportId: activity.id,
-        name: activity.name || 'Unavngivet træning',
-        date: activity.date,
-        startTime: activity.start_time || null,
-        endTime: activity.end_time || null,
-        playerCount: activity.attending ? activity.attending.length : 0,
-        players: activity.attending || [],
-      }))
+      .filter(training => training.date !== null) // Only include if we have a valid date
 
     console.log(`Valid trainings after filtering: ${trainings.length}`)
 
@@ -136,11 +141,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if training already exists
-    const existingTraining = await prisma.training.findFirst({
+    console.log('Importing training:', training)
+
+    // Parse date from training.date (should be YYYY-MM-DD format)
+    const trainingDate = new Date(training.date)
+    console.log('Training date:', trainingDate)
+
+    // Check if training already exists by holdsportId
+    const existingTraining = await prisma.training.findUnique({
       where: {
-        name: training.name,
-        date: new Date(training.date),
+        holdsportId: training.holdsportId,
       },
     })
 
@@ -167,12 +177,18 @@ export async function POST(request: NextRequest) {
     }
 
     const activityDetails: HoldsportActivity = await response.json()
-    console.log('Activity details:', activityDetails)
-    console.log('Attending count:', activityDetails.attending?.length || 0)
+    console.log('Activity details:', JSON.stringify(activityDetails, null, 2).substring(0, 500))
+    console.log('Total users:', activityDetails.activities_users?.length || 0)
+
+    // Only include users who are registered (status_code = 1 = Tilmeldt)
+    const attendingUsers = (activityDetails.activities_users || [])
+      .filter(user => user.status_code === 1)
+
+    console.log('Attending users (status=1):', attendingUsers.length)
 
     // Map Holdsport users to our players by name matching
-    const attendingNames = (activityDetails.attending || []).map(a =>
-      `${a.first_name} ${a.last_name}`.trim().toLowerCase()
+    const attendingNames = attendingUsers.map(user =>
+      user.name.trim().toLowerCase()
     )
 
     console.log('Attending names:', attendingNames)
@@ -194,10 +210,11 @@ export async function POST(request: NextRequest) {
     const createdTraining = await prisma.training.create({
       data: {
         name: training.name,
-        date: new Date(training.date),
+        date: trainingDate,
         courts: 3, // Default value
         matchesPerCourt: 3, // Default value
         status: 'PLANNED',
+        holdsportId: training.holdsportId, // Save Holdsport ID for syncing
         trainingPlayers: {
           create: matchedPlayers.map(player => ({
             playerId: player.id,

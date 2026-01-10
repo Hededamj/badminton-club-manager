@@ -154,6 +154,11 @@ export function ImportHoldsportTrainingsDialog({
       const result = await res.json()
       console.log('Import result:', result)
 
+      // Save credentials for auto-sync
+      localStorage.setItem('holdsport_username', username)
+      localStorage.setItem('holdsport_password', password)
+      localStorage.setItem('holdsport_teamId', selectedTeamId)
+
       // Mark as imported
       setImportedIds(prev => new Set([...prev, training.holdsportId]))
 
@@ -317,15 +322,6 @@ export function ImportHoldsportTrainingsDialog({
                           {isImporting ? 'Importerer...' : isImported ? 'Importeret' : 'Importer'}
                         </Button>
                       </div>
-
-                      {training.players.length > 0 && (
-                        <div className="text-xs text-muted-foreground">
-                          <p className="font-medium mb-1">Tilmeldte spillere:</p>
-                          <p className="line-clamp-2">
-                            {training.players.map(p => `${p.first_name} ${p.last_name}`).join(', ')}
-                          </p>
-                        </div>
-                      )}
                     </div>
                   )
                 })}

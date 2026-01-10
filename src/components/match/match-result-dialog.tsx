@@ -33,9 +33,39 @@ export function MatchResultDialog({
 
   const handleTeamWin = (team: 1 | 2) => {
     setWinningTeam(team)
+    // Don't auto-fill scores - let user choose to add details or save quickly
+  }
 
-    // Auto-fill common badminton scores
-    if (team === 1) {
+  const handleQuickSave = async () => {
+    if (!winningTeam) return
+
+    try {
+      setSubmitting(true)
+      setError('')
+
+      const res = await fetch(`/api/matches/${matchId}/result`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ winningTeam }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Kunne ikke gemme resultat')
+      }
+
+      onSuccess()
+      handleClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Der opstod en fejl')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleAddScores = () => {
+    // Auto-fill common badminton scores when user wants to add details
+    if (winningTeam === 1) {
       setTeam1Score('21')
       setTeam2Score('19')
     } else {
@@ -151,8 +181,55 @@ export function MatchResultDialog({
                 </Button>
               </div>
             </div>
+          ) : !team1Score && !team2Score ? (
+            /* Step 2: Quick save or add details */
+            <div className="space-y-4">
+              <div className="text-center mb-2">
+                <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-lg">
+                  <div className={`w-3 h-3 rounded-full ${winningTeam === 1 ? 'bg-blue-500' : 'bg-red-500'}`} />
+                  <p className="text-sm font-semibold">
+                    {winningTeam === 1 ? 'Hold 1 (Blå)' : 'Hold 2 (Rød)'} vandt
+                  </p>
+                </div>
+              </div>
+
+              {error && (
+                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive text-center">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 pt-2">
+                <Button
+                  onClick={handleQuickSave}
+                  className="w-full h-16 md:h-14 text-lg md:text-base touch-manipulation"
+                  disabled={submitting}
+                  size="lg"
+                >
+                  {submitting ? 'Gemmer...' : '✓ Gem resultat'}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={handleAddScores}
+                  className="w-full h-14 md:h-12 text-base md:text-sm touch-manipulation"
+                  disabled={submitting}
+                >
+                  Tilføj score detaljer
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  onClick={() => setWinningTeam(null)}
+                  className="w-full h-12 text-sm touch-manipulation"
+                  disabled={submitting}
+                >
+                  Tilbage
+                </Button>
+              </div>
+            </div>
           ) : (
-            /* Step 2: Enter scores */
+            /* Step 3: Enter scores (optional) */
             <div className="space-y-4">
               <div className="text-center mb-2">
                 <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-lg">
@@ -273,7 +350,10 @@ export function MatchResultDialog({
               <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
-                  onClick={() => setWinningTeam(null)}
+                  onClick={() => {
+                    setTeam1Score('')
+                    setTeam2Score('')
+                  }}
                   className="flex-1 h-14 md:h-12 text-base md:text-sm touch-manipulation"
                   disabled={submitting}
                 >

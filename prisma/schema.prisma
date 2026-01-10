@@ -115,6 +115,7 @@ model Training {
   courts          Int             @default(6) // Number of courts available
   matchesPerCourt Int             @default(3) @map("matches_per_court")
   status          TrainingStatus  @default(PLANNED)
+  holdsportId     String?         @unique @map("holdsport_id") // ID from Holdsport API for syncing
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
@@ -128,11 +129,13 @@ model Training {
 
 // Junction table: Training <-> Player
 model TrainingPlayer {
-  id          String   @id @default(uuid())
-  trainingId  String   @map("training_id")
-  playerId    String   @map("player_id")
-  attending   Boolean  @default(true)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id          String    @id @default(uuid())
+  trainingId  String    @map("training_id")
+  playerId    String    @map("player_id")
+  attending   Boolean   @default(true)
+  paused      Boolean   @default(false) // Player paused during training (injury/leaving early)
+  pausedAt    DateTime? @map("paused_at") // When player was paused
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   training    Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
   player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
