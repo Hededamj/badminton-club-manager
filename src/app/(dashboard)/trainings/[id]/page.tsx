@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Calendar, Users, Trash2, Play, CheckCircle2, Grid3x3, List, RefreshCw, Pause, PlayCircle, Edit } from 'lucide-react'
+import { ArrowLeft, Calendar, Users, Trash2, Play, CheckCircle2, Grid3x3, List, RefreshCw, Pause, PlayCircle, Edit, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +12,7 @@ import { MatchResultDialog } from '@/components/match/match-result-dialog'
 import { EditMatchDialog } from '@/components/match/edit-match-dialog'
 import { CourtView } from '@/components/match/court-view'
 import { TrainingCourtViewRedesign } from '@/components/training/training-court-view-redesign'
+import { AddGuestDialog } from '@/components/training/add-guest-dialog'
 
 interface Training {
   id: string
@@ -87,6 +88,7 @@ export default function TrainingDetailPage() {
   const [selectedBenchPlayer, setSelectedBenchPlayer] = useState<string | null>(null)
   const [selectedMatchPlayer, setSelectedMatchPlayer] = useState<{playerId: string, matchId: string, team: number, position: number} | null>(null)
   const [swapping, setSwapping] = useState(false)
+  const [showAddGuestDialog, setShowAddGuestDialog] = useState(false)
 
   useEffect(() => {
     fetchTraining()
@@ -1294,13 +1296,29 @@ export default function TrainingDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Tilmeldte spillere</CardTitle>
-            <CardDescription>
-              {training.trainingPlayers.length} spillere deltager i træningen
-              {training.trainingPlayers.filter(tp => tp.paused).length > 0 && (
-                <> • {training.trainingPlayers.filter(tp => tp.paused).length} pauseret</>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle>Tilmeldte spillere</CardTitle>
+                <CardDescription>
+                  {training.trainingPlayers.length} spillere deltager i træningen
+                  {training.trainingPlayers.filter(tp => tp.paused).length > 0 && (
+                    <> • {training.trainingPlayers.filter(tp => tp.paused).length} pauseret</>
+                  )}
+                </CardDescription>
+              </div>
+              {(getTrainingStatus() === 'PLANNED' || getTrainingStatus() === 'IN_PROGRESS') && (
+                <Button
+                  onClick={() => setShowAddGuestDialog(true)}
+                  size="sm"
+                  variant="outline"
+                  className="flex-shrink-0"
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Tilføj Gæst</span>
+                  <span className="sm:hidden">Gæst</span>
+                </Button>
               )}
-            </CardDescription>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -1385,6 +1403,13 @@ export default function TrainingDetailPage() {
           onSuccess={handleEditSuccess}
         />
       )}
+
+      <AddGuestDialog
+        open={showAddGuestDialog}
+        onOpenChange={setShowAddGuestDialog}
+        trainingId={params.id as string}
+        onSuccess={fetchTraining}
+      />
     </div>
   )
 }
