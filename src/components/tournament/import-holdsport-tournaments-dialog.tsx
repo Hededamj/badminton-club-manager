@@ -317,7 +317,7 @@ export function ImportHoldsportTournamentsDialog({
                     htmlFor="fetchAll"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Hent alle aktiviteter (90 dage, kan tage længere tid)
+                    Vis aktiviteter fra de næste 90 dage (i stedet for 30)
                   </label>
                 </div>
 
@@ -327,7 +327,7 @@ export function ImportHoldsportTournamentsDialog({
                   className="w-full md:w-auto"
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  {fetchingTournaments ? 'Henter aktiviteter...' : fetchAllTournaments ? 'Hent alle aktiviteter (90 dage)' : 'Hent aktiviteter (30 dage)'}
+                  {fetchingTournaments ? 'Henter aktiviteter...' : 'Hent aktiviteter'}
                 </Button>
               </div>
             </div>

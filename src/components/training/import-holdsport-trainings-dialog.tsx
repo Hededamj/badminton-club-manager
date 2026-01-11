@@ -266,7 +266,7 @@ export function ImportHoldsportTrainingsDialog({
                     htmlFor="fetchAll"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Hent alle træninger (kan tage længere tid)
+                    Vis træninger fra de næste 60 dage (i stedet for 7)
                   </label>
                 </div>
 
@@ -276,7 +276,7 @@ export function ImportHoldsportTrainingsDialog({
                   className="w-full md:w-auto"
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  {fetchingTrainings ? 'Henter træninger...' : fetchAllTrainings ? 'Hent alle planlagte træninger' : 'Hent træninger (7 dage)'}
+                  {fetchingTrainings ? 'Henter træninger...' : 'Hent træninger'}
                 </Button>
               </div>
             </div>
