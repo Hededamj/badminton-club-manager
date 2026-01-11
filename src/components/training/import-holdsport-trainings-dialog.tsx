@@ -169,6 +169,7 @@ export function ImportHoldsportTrainingsDialog({
       alert(`Træning importeret!\n\n${result.matched} spillere matchet fra ${result.total} tilmeldte.\n${result.unmatched > 0 ? `\n${result.unmatched} spillere kunne ikke matches - de skal måske oprettes først.` : ''}`)
 
       onSuccess()
+      onOpenChange(false) // Close dialog after successful import
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Der opstod en fejl')
     } finally {
