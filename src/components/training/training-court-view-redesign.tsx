@@ -226,7 +226,7 @@ export function TrainingCourtViewRedesign({
                                     onClickPlayerPosition(match.id, 1, position, mp?.player.id)
                                   }
                                 }}
-                                className={`flex items-center justify-between text-sm p-2 rounded transition-all min-h-[44px] ${
+                                className={`flex items-center justify-between p-3 rounded-lg transition-all min-h-[52px] ${
                                   trainingStatus === 'IN_PROGRESS' && !isCompleted
                                     ? isSelected
                                       ? 'cursor-pointer bg-blue-200 border-2 border-blue-500 shadow-md'
@@ -240,15 +240,15 @@ export function TrainingCourtViewRedesign({
                               >
                                 {mp ? (
                                   <>
-                                    <span className="font-medium text-slate-900 truncate">
+                                    <span className="font-semibold text-slate-900 truncate text-base">
                                       {mp.player.name}
                                     </span>
-                                    <span className="text-xs font-mono text-slate-500 ml-2 flex-shrink-0">
+                                    <span className="text-sm font-bold text-slate-600 ml-2 flex-shrink-0">
                                       {Math.round(mp.player.level)}
                                     </span>
                                   </>
                                 ) : (
-                                  <span className="text-gray-400 italic text-xs">Tom position</span>
+                                  <span className="text-gray-400 italic text-sm">Tom position</span>
                                 )}
                               </div>
                             )
@@ -256,10 +256,10 @@ export function TrainingCourtViewRedesign({
                         </div>
 
                         {/* VS Divider */}
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-px bg-slate-200" />
-                          <span className="text-xs font-black text-slate-400">VS</span>
-                          <div className="flex-1 h-px bg-slate-200" />
+                        <div className="flex items-center gap-2 py-1">
+                          <div className="flex-1 h-px bg-slate-300" />
+                          <span className="text-xs font-black text-slate-500">VS</span>
+                          <div className="flex-1 h-px bg-slate-300" />
                         </div>
 
                         {/* Team 2 (Red) */}
@@ -279,7 +279,7 @@ export function TrainingCourtViewRedesign({
                                     onClickPlayerPosition(match.id, 2, position, mp?.player.id)
                                   }
                                 }}
-                                className={`flex items-center justify-between text-sm p-2 rounded transition-all min-h-[44px] ${
+                                className={`flex items-center justify-between p-3 rounded-lg transition-all min-h-[52px] ${
                                   trainingStatus === 'IN_PROGRESS' && !isCompleted
                                     ? isSelected
                                       ? 'cursor-pointer bg-red-200 border-2 border-red-500 shadow-md'
@@ -293,15 +293,15 @@ export function TrainingCourtViewRedesign({
                               >
                                 {mp ? (
                                   <>
-                                    <span className="font-medium text-slate-900 truncate">
+                                    <span className="font-semibold text-slate-900 truncate text-base">
                                       {mp.player.name}
                                     </span>
-                                    <span className="text-xs font-mono text-slate-500 ml-2 flex-shrink-0">
+                                    <span className="text-sm font-bold text-slate-600 ml-2 flex-shrink-0">
                                       {Math.round(mp.player.level)}
                                     </span>
                                   </>
                                 ) : (
-                                  <span className="text-gray-400 italic text-xs">Tom position</span>
+                                  <span className="text-gray-400 italic text-sm">Tom position</span>
                                 )}
                               </div>
                             )
@@ -321,10 +321,10 @@ export function TrainingCourtViewRedesign({
                             </div>
                           </div>
                         ) : (
-                          <div className="flex gap-2">
+                          <div className="flex flex-col gap-2">
                             <Button
-                              size="sm"
-                              className="flex-1 bg-slate-900 hover:bg-slate-800"
+                              size="lg"
+                              className="w-full bg-slate-900 hover:bg-slate-800 font-semibold text-base py-6"
                               onClick={() => onMatchClick(match)}
                             >
                               Resultat
@@ -334,9 +334,10 @@ export function TrainingCourtViewRedesign({
                                 size="sm"
                                 variant="outline"
                                 onClick={() => onEditMatch(match)}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="w-full opacity-0 group-hover:opacity-100 transition-opacity"
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-4 w-4 mr-2" />
+                                Rediger spillere
                               </Button>
                             )}
                           </div>
