@@ -226,7 +226,7 @@ export function TrainingCourtViewRedesign({
                                     onClickPlayerPosition(match.id, 1, position, mp?.player.id)
                                   }
                                 }}
-                                className={`flex items-center justify-between p-3 rounded-lg transition-all min-h-[52px] ${
+                                className={`flex items-center justify-between p-2 rounded transition-all min-h-[44px] ${
                                   trainingStatus === 'IN_PROGRESS' && !isCompleted
                                     ? isSelected
                                       ? 'cursor-pointer bg-blue-200 border-2 border-blue-500 shadow-md'
@@ -240,15 +240,15 @@ export function TrainingCourtViewRedesign({
                               >
                                 {mp ? (
                                   <>
-                                    <span className="font-semibold text-slate-900 text-base leading-tight break-words flex-1 mr-2">
+                                    <span className="font-medium text-slate-900 text-sm leading-tight break-words flex-1 mr-2">
                                       {mp.player.name}
                                     </span>
-                                    <span className="text-sm font-bold text-slate-600 flex-shrink-0">
+                                    <span className="text-xs font-mono text-slate-500 flex-shrink-0">
                                       {Math.round(mp.player.level)}
                                     </span>
                                   </>
                                 ) : (
-                                  <span className="text-gray-400 italic text-sm">Tom position</span>
+                                  <span className="text-gray-400 italic text-xs">Tom position</span>
                                 )}
                               </div>
                             )
@@ -256,10 +256,10 @@ export function TrainingCourtViewRedesign({
                         </div>
 
                         {/* VS Divider */}
-                        <div className="flex items-center gap-2 py-1">
-                          <div className="flex-1 h-px bg-slate-300" />
-                          <span className="text-xs font-black text-slate-500">VS</span>
-                          <div className="flex-1 h-px bg-slate-300" />
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-px bg-slate-200" />
+                          <span className="text-xs font-black text-slate-400">VS</span>
+                          <div className="flex-1 h-px bg-slate-200" />
                         </div>
 
                         {/* Team 2 (Red) */}
@@ -279,7 +279,7 @@ export function TrainingCourtViewRedesign({
                                     onClickPlayerPosition(match.id, 2, position, mp?.player.id)
                                   }
                                 }}
-                                className={`flex items-center justify-between p-3 rounded-lg transition-all min-h-[52px] ${
+                                className={`flex items-center justify-between p-2 rounded transition-all min-h-[44px] ${
                                   trainingStatus === 'IN_PROGRESS' && !isCompleted
                                     ? isSelected
                                       ? 'cursor-pointer bg-red-200 border-2 border-red-500 shadow-md'
@@ -293,15 +293,15 @@ export function TrainingCourtViewRedesign({
                               >
                                 {mp ? (
                                   <>
-                                    <span className="font-semibold text-slate-900 text-base leading-tight break-words flex-1 mr-2">
+                                    <span className="font-medium text-slate-900 text-sm leading-tight break-words flex-1 mr-2">
                                       {mp.player.name}
                                     </span>
-                                    <span className="text-sm font-bold text-slate-600 flex-shrink-0">
+                                    <span className="text-xs font-mono text-slate-500 flex-shrink-0">
                                       {Math.round(mp.player.level)}
                                     </span>
                                   </>
                                 ) : (
-                                  <span className="text-gray-400 italic text-sm">Tom position</span>
+                                  <span className="text-gray-400 italic text-xs">Tom position</span>
                                 )}
                               </div>
                             )
