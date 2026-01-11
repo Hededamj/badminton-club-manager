@@ -61,18 +61,15 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
         <div className="flex items-center gap-3">
           <Image
             src="/logo.png"
-            alt="Hareskov Badminton"
+            alt="CourtPlanner"
             width={50}
             height={50}
             className="rounded-lg"
           />
           <div>
             <h1 className="text-xl font-bold text-[#005A9C]">
-              HARESKOV
+              CourtPlanner
             </h1>
-            <p className="text-sm font-semibold text-[#005A9C]">
-              BADMINTON
-            </p>
           </div>
         </div>
       </div>

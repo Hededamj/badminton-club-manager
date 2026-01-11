@@ -198,7 +198,7 @@ export function ImportHoldsportTournamentsDialog({
       setImportedIds(prev => new Set([...prev, tournament.holdsportId]))
 
       // Show success message
-      alert(`Turnering importeret!\\n\\n${result.matched} spillere matchet fra ${result.total} tilmeldte.\\n${result.unmatched > 0 ? `\\n${result.unmatched} spillere kunne ikke matches - de skal måske oprettes først.` : ''}`)
+      alert(`Turnering importeret!\n\n${result.matched} spillere matchet fra ${result.total} tilmeldte.${result.unmatched > 0 ? `\n\n${result.unmatched} spillere kunne ikke matches - de skal måske oprettes først.` : ''}`)
 
       onSuccess()
     } catch (err) {

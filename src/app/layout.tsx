@@ -6,8 +6,8 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Hareskov Badminton - Trænings & Turneringssystem",
-  description: "Administrationssystem for Hareskov Badminton træninger og turneringer",
+  title: "CourtPlanner - Trænings & Turneringssystem",
+  description: "Administrationssystem for badminton træninger og turneringer",
 };
 
 export default function RootLayout({

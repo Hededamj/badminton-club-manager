@@ -48,14 +48,14 @@ export default function LoginPage() {
           <div className="flex flex-col items-center gap-4">
             <Image
               src="/logo.png"
-              alt="Hareskov Badminton"
+              alt="CourtPlanner"
               width={100}
               height={100}
               className="rounded-lg"
             />
             <div className="text-center">
               <CardTitle className="text-3xl font-bold text-[#005A9C]">
-                HARESKOV BADMINTON
+                CourtPlanner
               </CardTitle>
               <CardDescription className="text-base mt-2">
                 Log ind for at administrere træninger og turneringer
