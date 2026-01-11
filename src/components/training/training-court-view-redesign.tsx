@@ -240,10 +240,10 @@ export function TrainingCourtViewRedesign({
                               >
                                 {mp ? (
                                   <>
-                                    <span className="font-semibold text-slate-900 truncate text-base">
+                                    <span className="font-semibold text-slate-900 text-base leading-tight break-words flex-1 mr-2">
                                       {mp.player.name}
                                     </span>
-                                    <span className="text-sm font-bold text-slate-600 ml-2 flex-shrink-0">
+                                    <span className="text-sm font-bold text-slate-600 flex-shrink-0">
                                       {Math.round(mp.player.level)}
                                     </span>
                                   </>
@@ -293,10 +293,10 @@ export function TrainingCourtViewRedesign({
                               >
                                 {mp ? (
                                   <>
-                                    <span className="font-semibold text-slate-900 truncate text-base">
+                                    <span className="font-semibold text-slate-900 text-base leading-tight break-words flex-1 mr-2">
                                       {mp.player.name}
                                     </span>
-                                    <span className="text-sm font-bold text-slate-600 ml-2 flex-shrink-0">
+                                    <span className="text-sm font-bold text-slate-600 flex-shrink-0">
                                       {Math.round(mp.player.level)}
                                     </span>
                                   </>
