@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Trophy, Calendar, ChevronRight } from 'lucide-react'
+import { Plus, Trophy, Calendar, ChevronRight, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
@@ -24,6 +24,7 @@ interface TournamentsListCleanProps {
   tournaments: Tournament[]
   loading: boolean
   onCreateClick: () => void
+  onImportClick?: () => void
 }
 
 const formatLabels: Record<string, string> = {
@@ -67,6 +68,7 @@ export function TournamentsListClean({
   tournaments,
   loading,
   onCreateClick,
+  onImportClick,
 }: TournamentsListCleanProps) {
   const router = useRouter()
 
@@ -81,13 +83,25 @@ export function TournamentsListClean({
           </p>
         </div>
 
-        <Button
-          onClick={onCreateClick}
-          className="bg-[#005A9C] hover:bg-[#004A7C]"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Ny Turnering
-        </Button>
+        <div className="flex gap-2">
+          {onImportClick && (
+            <Button
+              onClick={onImportClick}
+              variant="outline"
+              className="border-[#005A9C] text-[#005A9C] hover:bg-[#005A9C]/10"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Importer fra Holdsport
+            </Button>
+          )}
+          <Button
+            onClick={onCreateClick}
+            className="bg-[#005A9C] hover:bg-[#004A7C]"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Ny Turnering
+          </Button>
+        </div>
       </div>
 
       {/* Tournaments Grid */}

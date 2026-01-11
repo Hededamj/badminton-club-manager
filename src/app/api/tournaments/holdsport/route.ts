@@ -17,7 +17,7 @@ interface HoldsportActivity {
   }>
 }
 
-// GET /api/trainings/holdsport - Fetch upcoming trainings from Holdsport
+// GET /api/tournaments/holdsport - Fetch activities from Holdsport that could be tournaments
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -39,14 +39,12 @@ export async function GET(request: NextRequest) {
     }
 
     const auth = Buffer.from(`${username}:${password}`).toString('base64')
-    const days = daysParam ? parseInt(daysParam, 10) : 7 // Default to 7 days
+    const days = daysParam ? parseInt(daysParam, 10) : 60 // Default to 60 days for tournaments
 
-    console.log('Fetching Holdsport activities for team:', teamId)
-    console.log('Auth header created (first 20 chars):', auth.substring(0, 20))
+    console.log('Fetching Holdsport activities for tournaments, team:', teamId)
     console.log('Fetching days:', days)
 
     // Fetch activities from Holdsport
-    // Get activities from today and X days forward
     const today = new Date()
     const activities: HoldsportActivity[] = []
 
@@ -57,7 +55,6 @@ export async function GET(request: NextRequest) {
       const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD
 
       const url = `https://api.holdsport.dk/v1/teams/${teamId}/activities?date=${dateStr}`
-      console.log(`Fetching from URL: ${url}`)
 
       const response = await fetch(url, {
         headers: {
@@ -65,13 +62,10 @@ export async function GET(request: NextRequest) {
         },
       })
 
-      console.log(`Response for ${dateStr}: status=${response.status}`)
-
       if (response.ok) {
         const dayActivities: HoldsportActivity[] = await response.json()
-        console.log(`Activities on ${dateStr}:`, dayActivities.length)
 
-        // Filter to only include activities with attendees
+        // Include all activities with attendees
         const activitiesWithAttendees = dayActivities.filter(act =>
           act.activities_users && act.activities_users.length > 0
         )
@@ -85,30 +79,23 @@ export async function GET(request: NextRequest) {
 
     console.log(`Total activities fetched: ${activities.length}`)
 
-    // Calculate the end date for filtering
-    const endDate = new Date()
-    endDate.setDate(today.getDate() + days)
-    const endDateStr = endDate.toISOString().split('T')[0]
-
-    console.log(`Filtering trainings between ${today.toISOString().split('T')[0]} and ${endDateStr}`)
-
     // Transform to our format
-    const trainings = activities
+    const tournaments = activities
       .map(activity => {
-        // Extract date from starttime (format: "2026-01-13T19:15:00+01:00")
+        // Extract date from starttime
         const activityDate = activity.starttime ? activity.starttime.split('T')[0] : null
 
         // Only include users who are registered (status_code = 1)
         const attendingPlayers = (activity.activities_users || [])
           .filter(user => user.status_code === 1)
 
-        // Extract time from starttime and endtime
-        const startTime = activity.starttime ? activity.starttime.split('T')[1]?.substring(0, 5) : null // "19:15"
-        const endTime = activity.endtime ? activity.endtime.split('T')[1]?.substring(0, 5) : null // "21:00"
+        // Extract time
+        const startTime = activity.starttime ? activity.starttime.split('T')[1]?.substring(0, 5) : null
+        const endTime = activity.endtime ? activity.endtime.split('T')[1]?.substring(0, 5) : null
 
         return {
           holdsportId: String(activity.id),
-          name: activity.name || 'Unavngivet træning',
+          name: activity.name || 'Unavngiven turnering',
           date: activityDate,
           startTime,
           endTime,
@@ -116,33 +103,24 @@ export async function GET(request: NextRequest) {
           players: attendingPlayers,
         }
       })
-      .filter(training => {
-        // Only include if we have a valid date and it's within the selected date range
-        if (!training.date) return false
+      .filter(tournament => tournament.date !== null)
 
-        const trainingDate = new Date(training.date)
-        const todayDate = new Date(today.toISOString().split('T')[0])
-        const maxDate = new Date(endDateStr)
-
-        return trainingDate >= todayDate && trainingDate <= maxDate
-      })
-
-    console.log(`Valid trainings after filtering: ${trainings.length}`)
+    console.log(`Valid activities after filtering: ${tournaments.length}`)
 
     return NextResponse.json({
-      trainings,
-      total: trainings.length,
+      tournaments,
+      total: tournaments.length,
     })
   } catch (error) {
     console.error('Holdsport API error:', error)
     return NextResponse.json(
-      { error: 'Der opstod en fejl ved hentning af træninger fra Holdsport' },
+      { error: 'Der opstod en fejl ved hentning af aktiviteter fra Holdsport' },
       { status: 500 }
     )
   }
 }
 
-// POST /api/trainings/holdsport - Import a training from Holdsport
+// POST /api/tournaments/holdsport - Import a tournament from Holdsport
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -151,39 +129,25 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { training, username, password, teamId } = body
+    const { tournament, username, password, teamId, format, matchTypes } = body
 
-    if (!training || !username || !password || !teamId) {
+    if (!tournament || !username || !password || !teamId || !format || !matchTypes) {
       return NextResponse.json(
         { error: 'Manglende påkrævede felter' },
         { status: 400 }
       )
     }
 
-    console.log('Importing training:', training)
+    console.log('Importing tournament:', tournament)
 
-    // Parse date from training.date (should be YYYY-MM-DD format)
-    const trainingDate = new Date(training.date)
-    console.log('Training date:', trainingDate)
-
-    // Check if training already exists by holdsportId
-    const existingTraining = await prisma.training.findUnique({
-      where: {
-        holdsportId: training.holdsportId,
-      },
-    })
-
-    if (existingTraining) {
-      return NextResponse.json(
-        { error: 'Træning findes allerede i systemet' },
-        { status: 400 }
-      )
-    }
+    // Parse date from tournament.date
+    const startDate = new Date(tournament.date)
+    console.log('Tournament start date:', startDate)
 
     // Fetch detailed activity info including attendees from Holdsport
     const auth = Buffer.from(`${username}:${password}`).toString('base64')
     const response = await fetch(
-      `https://api.holdsport.dk/v1/teams/${teamId}/activities/${training.holdsportId}`,
+      `https://api.holdsport.dk/v1/teams/${teamId}/activities/${tournament.holdsportId}`,
       {
         headers: {
           'Authorization': `Basic ${auth}`,
@@ -196,21 +160,17 @@ export async function POST(request: NextRequest) {
     }
 
     const activityDetails: HoldsportActivity = await response.json()
-    console.log('Activity details:', JSON.stringify(activityDetails, null, 2).substring(0, 500))
-    console.log('Total users:', activityDetails.activities_users?.length || 0)
 
-    // Only include users who are registered (status_code = 1 = Tilmeldt)
+    // Only include users who are registered (status_code = 1)
     const attendingUsers = (activityDetails.activities_users || [])
       .filter(user => user.status_code === 1)
 
-    console.log('Attending users (status=1):', attendingUsers.length)
+    console.log('Attending users:', attendingUsers.length)
 
     // Map Holdsport users to our players by name matching
     const attendingNames = attendingUsers.map(user =>
       user.name.trim().toLowerCase()
     )
-
-    console.log('Attending names:', attendingNames)
 
     // Find matching players in our database
     const allPlayers = await prisma.player.findMany({
@@ -225,23 +185,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`Matched ${matchedPlayers.length} players from ${attendingNames.length} attendees`)
 
-    // Create training
-    const createdTraining = await prisma.training.create({
+    // Create tournament
+    const createdTournament = await prisma.tournament.create({
       data: {
-        name: training.name,
-        date: trainingDate,
-        courts: 3, // Default value
-        matchesPerCourt: 3, // Default value
+        name: tournament.name,
+        startDate: startDate,
+        endDate: startDate, // Default end date to start date
+        format: format,
+        matchTypes: matchTypes,
         status: 'PLANNED',
-        holdsportId: training.holdsportId, // Save Holdsport ID for syncing
-        trainingPlayers: {
+        description: `Importeret fra Holdsport - ${matchedPlayers.length} deltagere`,
+        tournamentPlayers: {
           create: matchedPlayers.map(player => ({
             playerId: player.id,
           })),
         },
       },
       include: {
-        trainingPlayers: {
+        tournamentPlayers: {
           include: {
             player: true,
           },
@@ -251,15 +212,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      training: createdTraining,
+      tournament: createdTournament,
       matched: matchedPlayers.length,
       total: attendingNames.length,
       unmatched: attendingNames.length - matchedPlayers.length,
     })
   } catch (error: any) {
-    console.error('Error importing training:', error)
+    console.error('Error importing tournament:', error)
     return NextResponse.json(
-      { error: error.message || 'Der opstod en fejl ved import af træning' },
+      { error: error.message || 'Der opstod en fejl ved import af turnering' },
       { status: 500 }
     )
   }

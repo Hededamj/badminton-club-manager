@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { TournamentsListClean } from '@/components/tournament/tournaments-list-clean'
+import { ImportHoldsportTournamentsDialog } from '@/components/tournament/import-holdsport-tournaments-dialog'
 
 interface Tournament {
   id: string
@@ -20,8 +22,10 @@ interface Tournament {
 
 export default function TournamentsPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
 
   useEffect(() => {
     fetchTournaments()
@@ -41,11 +45,26 @@ export default function TournamentsPage() {
     }
   }
 
+  const handleImportSuccess = () => {
+    fetchTournaments()
+  }
+
   return (
-    <TournamentsListClean
-      tournaments={tournaments}
-      loading={loading}
-      onCreateClick={() => router.push('/tournaments/new')}
-    />
+    <>
+      <TournamentsListClean
+        tournaments={tournaments}
+        loading={loading}
+        onCreateClick={() => router.push('/tournaments/new')}
+        onImportClick={session?.user?.role === 'ADMIN' ? () => setImportDialogOpen(true) : undefined}
+      />
+
+      {session?.user?.role === 'ADMIN' && (
+        <ImportHoldsportTournamentsDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          onSuccess={handleImportSuccess}
+        />
+      )}
+    </>
   )
 }
