@@ -85,6 +85,7 @@ export default function TrainingDetailPage() {
   const [matchToEdit, setMatchToEdit] = useState<any>(null)
   const [viewMode, setViewMode] = useState<'graphic' | 'list'>('graphic')
   const [selectedBenchPlayer, setSelectedBenchPlayer] = useState<string | null>(null)
+  const [selectedMatchPlayer, setSelectedMatchPlayer] = useState<{playerId: string, matchId: string, team: number, position: number} | null>(null)
   const [swapping, setSwapping] = useState(false)
 
   useEffect(() => {
@@ -155,6 +156,25 @@ export default function TrainingDetailPage() {
       setError(err instanceof Error ? err.message : 'Der opstod en fejl')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Silent refresh without showing loading state
+  const refreshTraining = async () => {
+    try {
+      // Add cache-busting parameter to ensure fresh data
+      const res = await fetch(`/api/trainings/${params.id}?_=${Date.now()}`, {
+        cache: 'no-store',
+      })
+
+      if (!res.ok) {
+        throw new Error('Kunne ikke hente træningsdata')
+      }
+
+      const data = await res.json()
+      setTraining(data)
+    } catch (err) {
+      console.error('Error refreshing training:', err)
     }
   }
 
@@ -264,16 +284,323 @@ export default function TrainingDetailPage() {
         throw new Error(errorData.error || 'Kunne ikke fjerne spiller')
       }
 
-      fetchTraining()
+      const data = await res.json()
+
+      // Optimistic update: only update the specific match instead of refetching everything
+      setTraining(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          matches: prev.matches.map(m =>
+            m.id === matchId ? data.match : m
+          )
+        }
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Der opstod en fejl')
+      // On error, refetch to ensure consistency
+      fetchTraining()
     } finally {
       setSwapping(false)
     }
   }
 
   const handleSelectBenchPlayer = (playerId: string) => {
+    // Deselect any match player when selecting bench player
+    setSelectedMatchPlayer(null)
     setSelectedBenchPlayer(selectedBenchPlayer === playerId ? null : playerId)
+  }
+
+  const handleSelectMatchPlayer = (playerId: string, matchId: string, team: number, position: number) => {
+    // Deselect any bench player when selecting match player
+    setSelectedBenchPlayer(null)
+
+    // If clicking the same player, deselect
+    if (selectedMatchPlayer?.playerId === playerId) {
+      setSelectedMatchPlayer(null)
+      return
+    }
+
+    setSelectedMatchPlayer({ playerId, matchId, team, position })
+  }
+
+  const handleMoveToBench = async () => {
+    if (!selectedMatchPlayer || !training) return
+
+    try {
+      setSwapping(true)
+      setError('')
+
+      const match = training.matches.find(m => m.id === selectedMatchPlayer.matchId)
+      if (!match) return
+
+      const playerName = match.matchPlayers.find(mp => mp.player.id === selectedMatchPlayer.playerId)?.player.name
+
+      // Remove the selected player from the match
+      const remainingPlayers = match.matchPlayers
+        .filter(mp => mp.player.id !== selectedMatchPlayer.playerId)
+        .map(mp => ({
+          playerId: mp.player.id,
+          team: mp.team,
+          position: mp.position,
+        }))
+
+      const res = await fetch(`/api/trainings/${training.id}/matches/${selectedMatchPlayer.matchId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ players: remainingPlayers }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Kunne ikke flytte spiller til bænk')
+      }
+
+      const responseData = await res.json()
+
+      // Update training state with the updated match from API response
+      setTraining(prev => {
+        if (!prev) return prev
+
+        const updatedMatches = prev.matches.map(m => {
+          if (m.id === selectedMatchPlayer.matchId) {
+            return responseData.match
+          }
+          return m
+        })
+
+        return {
+          ...prev,
+          matches: updatedMatches
+        }
+      })
+
+      setSelectedMatchPlayer(null)
+    } catch (err) {
+      console.error('Error moving to bench:', err)
+      setError(err instanceof Error ? err.message : 'Der opstod en fejl')
+      refreshTraining()
+    } finally {
+      setSwapping(false)
+    }
+  }
+
+  const handleClickPlayerPosition = async (
+    matchId: string,
+    team: number,
+    position: number,
+    currentPlayerId?: string
+  ) => {
+    if (!training) return
+
+    // If a bench player is selected, add them to this position
+    if (selectedBenchPlayer) {
+      await handleAddPlayerToMatch(matchId, team, position)
+      return
+    }
+
+    // If a match player is selected, swap them
+    if (selectedMatchPlayer) {
+      await handleSwapPlayers(matchId, team, position, currentPlayerId)
+      return
+    }
+
+    // If clicking an occupied position with no selection, select that player
+    if (currentPlayerId) {
+      handleSelectMatchPlayer(currentPlayerId, matchId, team, position)
+    }
+  }
+
+  const handleSwapPlayers = async (
+    targetMatchId: string,
+    targetTeam: number,
+    targetPosition: number,
+    targetPlayerId?: string
+  ) => {
+    if (!selectedMatchPlayer || !training) return
+
+    try {
+      setSwapping(true)
+      setError('')
+
+      // If swapping within the same match
+      if (selectedMatchPlayer.matchId === targetMatchId) {
+        const match = training.matches.find(m => m.id === targetMatchId)
+        if (!match) return
+
+        const updatedPlayers = match.matchPlayers.map(mp => {
+          // Move selected player to target position
+          if (mp.player.id === selectedMatchPlayer.playerId) {
+            return {
+              playerId: mp.player.id,
+              team: targetTeam,
+              position: targetPosition,
+            }
+          }
+          // Move target player to selected player's position (if position is occupied)
+          if (targetPlayerId && mp.player.id === targetPlayerId) {
+            return {
+              playerId: mp.player.id,
+              team: selectedMatchPlayer.team,
+              position: selectedMatchPlayer.position,
+            }
+          }
+          return {
+            playerId: mp.player.id,
+            team: mp.team,
+            position: mp.position,
+          }
+        })
+
+        // If target position was empty, just move the player
+        if (!targetPlayerId) {
+          const playerInNewPosition = updatedPlayers.find(
+            p => p.playerId === selectedMatchPlayer.playerId
+          )
+          if (playerInNewPosition) {
+            playerInNewPosition.team = targetTeam
+            playerInNewPosition.position = targetPosition
+          }
+        }
+
+        const res = await fetch(`/api/trainings/${training.id}/matches/${targetMatchId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ players: updatedPlayers }),
+        })
+
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(errorData.error || 'Kunne ikke bytte spillere')
+        }
+
+        const data = await res.json()
+        setTraining(prev => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            matches: prev.matches.map(m =>
+              m.id === targetMatchId ? data.match : m
+            )
+          }
+        })
+      } else {
+        // Swapping between different matches - need to update both matches
+        const sourceMatch = training.matches.find(m => m.id === selectedMatchPlayer.matchId)
+        const targetMatch = training.matches.find(m => m.id === targetMatchId)
+
+        if (!sourceMatch || !targetMatch) return
+
+        // Update source match: remove selected player, add target player if exists
+        let sourcePlayers = sourceMatch.matchPlayers
+          .filter(mp => mp.player.id !== selectedMatchPlayer.playerId)
+          .map(mp => ({
+            playerId: mp.player.id,
+            team: mp.team,
+            position: mp.position,
+          }))
+
+        if (targetPlayerId) {
+          sourcePlayers.push({
+            playerId: targetPlayerId,
+            team: selectedMatchPlayer.team,
+            position: selectedMatchPlayer.position,
+          })
+        }
+
+        // To avoid validation errors, we need to update in 3 steps:
+        // Step 1: Remove selectedPlayer from source match (without adding targetPlayer yet)
+        // Step 2: Update target match (remove targetPlayer, add selectedPlayer)
+        // Step 3: Add targetPlayer to source match (if there is one)
+
+        const sourcePlayersWithoutSelected = sourceMatch.matchPlayers
+          .filter(mp => mp.player.id !== selectedMatchPlayer.playerId)
+          .map(mp => ({
+            playerId: mp.player.id,
+            team: mp.team,
+            position: mp.position,
+          }))
+
+        const sourceRes1 = await fetch(`/api/trainings/${training.id}/matches/${selectedMatchPlayer.matchId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ players: sourcePlayersWithoutSelected }),
+        })
+
+        if (!sourceRes1.ok) {
+          const errorData = await sourceRes1.json()
+          throw new Error('Kunne ikke fjerne spiller fra kildekamp: ' + (errorData.error || ''))
+        }
+
+        // Step 2: Update target match (remove targetPlayer if exists, add selectedPlayer)
+        let targetPlayers = targetMatch.matchPlayers
+          .filter(mp => !targetPlayerId || mp.player.id !== targetPlayerId)
+          .map(mp => ({
+            playerId: mp.player.id,
+            team: mp.team,
+            position: mp.position,
+          }))
+
+        targetPlayers.push({
+          playerId: selectedMatchPlayer.playerId,
+          team: targetTeam,
+          position: targetPosition,
+        })
+
+        const targetRes = await fetch(`/api/trainings/${training.id}/matches/${targetMatchId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ players: targetPlayers }),
+        })
+
+        if (!targetRes.ok) {
+          const errorData = await targetRes.json()
+          throw new Error('Kunne ikke opdatere målkamp: ' + (errorData.error || ''))
+        }
+
+        const targetData = await targetRes.json()
+
+        // Step 3: Add targetPlayer to source match (if there is one)
+        let sourceData
+        if (targetPlayerId) {
+          const sourceRes2 = await fetch(`/api/trainings/${training.id}/matches/${selectedMatchPlayer.matchId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ players: sourcePlayers }),
+          })
+
+          if (!sourceRes2.ok) {
+            const errorData = await sourceRes2.json()
+            throw new Error('Kunne ikke tilføje spiller til kildekamp: ' + (errorData.error || ''))
+          }
+
+          sourceData = await sourceRes2.json()
+        } else {
+          // No target player, so just use the result from step 1
+          sourceData = await sourceRes1.json()
+        }
+
+        // Update training state with both updated matches
+        setTraining(prev => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            matches: prev.matches.map(m => {
+              if (m.id === selectedMatchPlayer.matchId) return sourceData.match
+              if (m.id === targetMatchId) return targetData.match
+              return m
+            })
+          }
+        })
+      }
+
+      setSelectedMatchPlayer(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Der opstod en fejl')
+      fetchTraining()
+    } finally {
+      setSwapping(false)
+    }
   }
 
   const handleAddPlayerToMatch = async (
@@ -329,10 +656,24 @@ export default function TrainingDetailPage() {
         throw new Error(errorData.error || 'Kunne ikke tilføje spiller')
       }
 
+      const data = await res.json()
+
+      // Optimistic update: only update the specific match instead of refetching everything
+      setTraining(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          matches: prev.matches.map(m =>
+            m.id === matchId ? data.match : m
+          )
+        }
+      })
+
       setSelectedBenchPlayer(null)
-      fetchTraining()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Der opstod en fejl')
+      // On error, refetch to ensure consistency
+      fetchTraining()
     } finally {
       setSwapping(false)
     }
@@ -397,15 +738,20 @@ export default function TrainingDetailPage() {
     fetchTraining()
   }
 
-  const getBenchPlayers = () => {
+  const getBenchPlayers = (roundNumber?: number) => {
     if (!training) return []
 
-    // Get all players currently in matches
+    // If roundNumber is specified, only look at matches in that round
+    const matchesToCheck = roundNumber
+      ? training.matches.filter(m => m.matchNumber === roundNumber)
+      : training.matches
+
+    // Get all players currently in matches for this round
     const playersInMatches = new Set(
-      training.matches.flatMap(m => m.matchPlayers.map(mp => mp.player.id))
+      matchesToCheck.flatMap(m => m.matchPlayers.map(mp => mp.player.id))
     )
 
-    // Get players who are available but not in any match (and not paused)
+    // Get players who are available but not in matches for this round (and not paused)
     const availablePlayers = training.trainingPlayers
       .filter(tp => !tp.paused && !playersInMatches.has(tp.player.id))
       .map(tp => tp.player)
@@ -735,9 +1081,12 @@ export default function TrainingDetailPage() {
                 matches={training.matches}
                 onMatchClick={handleMatchClick}
                 onEditMatch={handleEditMatch}
-                benchPlayers={getBenchPlayers()}
+                getBenchPlayers={getBenchPlayers}
                 selectedBenchPlayer={selectedBenchPlayer}
+                selectedMatchPlayer={selectedMatchPlayer}
                 onSelectBenchPlayer={handleSelectBenchPlayer}
+                onClickPlayerPosition={handleClickPlayerPosition}
+                onMoveToBench={handleMoveToBench}
                 trainingStatus={getTrainingStatus()}
               />
             ) : (

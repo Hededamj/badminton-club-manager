@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
 import { updateTrainingSchema } from '@/lib/validators/training'
 
+// Force dynamic rendering - disable all caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET(
   req: NextRequest,
   props: { params: Promise<{ id: string }> }
@@ -58,7 +62,14 @@ export async function GET(
       return NextResponse.json({ error: 'Training not found' }, { status: 404 })
     }
 
-    return NextResponse.json(training)
+    // Disable caching to ensure fresh data
+    return NextResponse.json(training, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
+      },
+    })
   } catch (error) {
     console.error('Error fetching training:', error)
     return NextResponse.json(

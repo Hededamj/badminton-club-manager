@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Download, Calendar, Users, Check } from 'lucide-react'
 import { format } from 'date-fns'
 import { da } from 'date-fns/locale'
@@ -51,6 +52,7 @@ export function ImportHoldsportTrainingsDialog({
   const [importing, setImporting] = useState<string | null>(null)
   const [importedIds, setImportedIds] = useState<Set<string>>(new Set())
   const [error, setError] = useState('')
+  const [fetchAllTrainings, setFetchAllTrainings] = useState(false)
 
   const handleFetchTeams = async () => {
     if (!username || !password) {
@@ -103,8 +105,9 @@ export function ImportHoldsportTrainingsDialog({
       setError('')
       setTrainings([])
 
+      const days = fetchAllTrainings ? 60 : 7 // Fetch 60 days if "all" is selected, otherwise 7 days
       const res = await fetch(
-        `/api/trainings/holdsport?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&teamId=${selectedTeamId}`
+        `/api/trainings/holdsport?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&teamId=${selectedTeamId}&days=${days}`
       )
 
       if (!res.ok) {
@@ -116,7 +119,7 @@ export function ImportHoldsportTrainingsDialog({
       setTrainings(data.trainings)
 
       if (data.trainings.length === 0) {
-        setError('Ingen planlagte træninger fundet de næste 7 dage')
+        setError(fetchAllTrainings ? 'Ingen planlagte træninger fundet' : 'Ingen planlagte træninger fundet de næste 7 dage')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Der opstod en fejl')
@@ -179,7 +182,7 @@ export function ImportHoldsportTrainingsDialog({
         <DialogHeader>
           <DialogTitle>Importer træninger fra Holdsport</DialogTitle>
           <DialogDescription>
-            Hent planlagte træninger fra Holdsport de næste 7 dage
+            Hent planlagte træninger fra Holdsport
           </DialogDescription>
         </DialogHeader>
 
@@ -253,13 +256,27 @@ export function ImportHoldsportTrainingsDialog({
                   </SelectContent>
                 </Select>
 
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="fetchAll"
+                    checked={fetchAllTrainings}
+                    onCheckedChange={(checked) => setFetchAllTrainings(checked === true)}
+                  />
+                  <label
+                    htmlFor="fetchAll"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Hent alle træninger (kan tage længere tid)
+                  </label>
+                </div>
+
                 <Button
                   onClick={handleFetchTrainings}
                   disabled={fetchingTrainings || !selectedTeamId}
                   className="w-full md:w-auto"
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  {fetchingTrainings ? 'Henter træninger...' : 'Hent planlagte træninger'}
+                  {fetchingTrainings ? 'Henter træninger...' : fetchAllTrainings ? 'Hent alle planlagte træninger' : 'Hent træninger (7 dage)'}
                 </Button>
               </div>
             </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { StatisticsRedesign } from '@/components/statistics/statistics-redesign'
+import { StatisticsClean } from '@/components/statistics/statistics-clean'
 
 interface Statistics {
   overview: {
@@ -110,5 +110,5 @@ export default function StatisticsPage() {
     )
   }
 
-  return <StatisticsRedesign statistics={statistics} rankings={rankings} />
+  return <StatisticsClean statistics={statistics} rankings={rankings} />
 }

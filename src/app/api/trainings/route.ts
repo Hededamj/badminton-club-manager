@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: {
-        date: 'desc',
+        date: 'asc',
       },
       take: limit ? parseInt(limit) : undefined,
     })

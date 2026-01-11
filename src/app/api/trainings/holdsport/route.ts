@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     const username = searchParams.get('username')
     const password = searchParams.get('password')
     const teamId = searchParams.get('teamId')
+    const daysParam = searchParams.get('days')
 
     if (!username || !password || !teamId) {
       return NextResponse.json(
@@ -38,17 +39,19 @@ export async function GET(request: NextRequest) {
     }
 
     const auth = Buffer.from(`${username}:${password}`).toString('base64')
+    const days = daysParam ? parseInt(daysParam, 10) : 7 // Default to 7 days
 
     console.log('Fetching Holdsport activities for team:', teamId)
     console.log('Auth header created (first 20 chars):', auth.substring(0, 20))
+    console.log('Fetching days:', days)
 
     // Fetch activities from Holdsport
-    // Get activities from today and 7 days forward
+    // Get activities from today and X days forward
     const today = new Date()
     const activities: HoldsportActivity[] = []
 
     // Holdsport API requires fetching activities by date
-    for (let i = 0; i <= 7; i++) {
+    for (let i = 0; i <= days; i++) {
       const date = new Date()
       date.setDate(today.getDate() + i)
       const dateStr = date.toISOString().split('T')[0] // YYYY-MM-DD

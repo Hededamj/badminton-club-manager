@@ -34,9 +34,12 @@ interface TrainingCourtViewProps {
   matches: Match[]
   onMatchClick: (match: Match) => void
   onEditMatch: (match: Match) => void
-  benchPlayers: Player[]
+  getBenchPlayers: (roundNumber: number) => Player[]
   selectedBenchPlayer: string | null
+  selectedMatchPlayer: {playerId: string, matchId: string, team: number, position: number} | null
   onSelectBenchPlayer: (playerId: string) => void
+  onClickPlayerPosition: (matchId: string, team: number, position: number, currentPlayerId?: string) => void
+  onMoveToBench: () => void
   trainingStatus: string
 }
 
@@ -60,9 +63,12 @@ export function TrainingCourtViewRedesign({
   matches,
   onMatchClick,
   onEditMatch,
-  benchPlayers,
+  getBenchPlayers,
   selectedBenchPlayer,
+  selectedMatchPlayer,
   onSelectBenchPlayer,
+  onClickPlayerPosition,
+  onMoveToBench,
   trainingStatus,
 }: TrainingCourtViewProps) {
   // Group matches by round (matchNumber)
@@ -78,48 +84,14 @@ export function TrainingCourtViewRedesign({
 
   return (
     <div className="space-y-8">
-      {/* Bench Section */}
-      {trainingStatus === 'IN_PROGRESS' && benchPlayers.length > 0 && (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 border-2 border-orange-200">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(251,146,60,0.1),transparent_50%)]" />
-          <div className="relative p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-1 h-8 bg-orange-500 rounded-full" />
-              <div>
-                <h3 className="text-lg font-bold text-orange-900 tracking-tight">
-                  BÆNK
-                </h3>
-                <p className="text-sm text-orange-700">
-                  {selectedBenchPlayer ? 'Klik på en position for at indsætte' : 'Vælg en spiller'}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {benchPlayers.map(player => (
-                <button
-                  key={player.id}
-                  onClick={() => onSelectBenchPlayer(player.id)}
-                  className={`
-                    px-4 py-2.5 rounded-lg font-medium text-sm transition-all
-                    ${selectedBenchPlayer === player.id
-                      ? 'bg-orange-600 text-white shadow-lg scale-105'
-                      : 'bg-white text-orange-900 hover:bg-orange-100 border-2 border-orange-200'
-                    }
-                  `}
-                >
-                  <span className="font-bold">{player.name}</span>
-                  <span className="ml-2 opacity-70 text-xs">({Math.round(player.level)})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Rounds */}
       <div className="space-y-12">
         {rounds.map((roundMatches, roundIndex) => {
           if (roundMatches.length === 0) return null
+
+          const roundNumber = roundIndex + 1
+          const benchPlayers = getBenchPlayers(roundNumber)
 
           return (
             <div key={roundIndex} className="space-y-6">
@@ -127,11 +99,11 @@ export function TrainingCourtViewRedesign({
               <div className="flex items-center gap-4">
                 <div className="flex items-baseline gap-3">
                   <div className="text-6xl font-black text-slate-200 leading-none select-none">
-                    {roundIndex + 1}
+                    {roundNumber}
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                      KAMP {roundIndex + 1}
+                      KAMP {roundNumber}
                     </h2>
                     <p className="text-sm text-slate-500">
                       {roundMatches.length} baner i spil
@@ -140,6 +112,59 @@ export function TrainingCourtViewRedesign({
                 </div>
                 <div className="flex-1 h-px bg-gradient-to-r from-slate-200 to-transparent" />
               </div>
+
+              {/* Bench Section for this round */}
+              {trainingStatus === 'IN_PROGRESS' && (benchPlayers.length > 0 || selectedMatchPlayer) && (
+                <div className="bg-card border rounded-lg p-4 md:p-6 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg md:text-xl font-bold text-[#005A9C]">
+                        Bænk - Runde {roundNumber}
+                      </h3>
+                      <p className="text-xs md:text-sm text-muted-foreground">
+                        {selectedMatchPlayer
+                          ? 'Spilleren vil blive flyttet til bænken for denne runde'
+                          : selectedBenchPlayer
+                            ? 'Klik på en position for at indsætte'
+                            : `${benchPlayers.length} spillere på bænken`}
+                      </p>
+                    </div>
+                    {selectedMatchPlayer && (
+                      <Button
+                        onClick={onMoveToBench}
+                        size="lg"
+                        className="bg-[#005A9C] hover:bg-[#004A7C] text-white font-bold shadow-lg"
+                      >
+                        <span className="hidden sm:inline">Sæt på bænk</span>
+                        <span className="sm:hidden">Bænk</span>
+                      </Button>
+                    )}
+                  </div>
+                  {benchPlayers.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {benchPlayers.map(player => (
+                        <button
+                          key={player.id}
+                          onClick={() => onSelectBenchPlayer(player.id)}
+                          className={`
+                            px-3 md:px-4 py-3 rounded-lg font-medium text-sm transition-all min-h-[48px]
+                            ${selectedBenchPlayer === player.id
+                              ? 'bg-[#005A9C] text-white shadow-lg scale-105'
+                              : 'bg-card border hover:bg-muted'
+                            }
+                          `}
+                        >
+                          <span className="font-bold">{player.name}</span>
+                          <span className="ml-2 opacity-70 text-xs">({Math.round(player.level)})</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {benchPlayers.length === 0 && !selectedMatchPlayer && (
+                    <p className="text-sm text-muted-foreground italic">Ingen spillere på bænken i denne runde</p>
+                  )}
+                </div>
+              )}
 
               {/* Match Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -189,19 +214,45 @@ export function TrainingCourtViewRedesign({
                           <div className="text-xs font-bold text-blue-600 uppercase tracking-wide">
                             Hold 1
                           </div>
-                          {team1.map((mp, idx) => (
-                            <div
-                              key={mp.player.id}
-                              className="flex items-center justify-between text-sm"
-                            >
-                              <span className="font-medium text-slate-900 truncate">
-                                {mp.player.name}
-                              </span>
-                              <span className="text-xs font-mono text-slate-500 ml-2 flex-shrink-0">
-                                {Math.round(mp.player.level)}
-                              </span>
-                            </div>
-                          ))}
+                          {[1, 2].map(position => {
+                            const mp = team1.find(p => p.position === position)
+                            const isSelected = selectedMatchPlayer?.playerId === mp?.player.id
+                            return (
+                              <div
+                                key={position}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (trainingStatus === 'IN_PROGRESS' && !isCompleted) {
+                                    onClickPlayerPosition(match.id, 1, position, mp?.player.id)
+                                  }
+                                }}
+                                className={`flex items-center justify-between text-sm p-2 rounded transition-all min-h-[44px] ${
+                                  trainingStatus === 'IN_PROGRESS' && !isCompleted
+                                    ? isSelected
+                                      ? 'cursor-pointer bg-blue-200 border-2 border-blue-500 shadow-md'
+                                      : mp
+                                      ? 'cursor-pointer hover:bg-blue-50 border-2 border-transparent hover:border-blue-300'
+                                      : selectedBenchPlayer || selectedMatchPlayer
+                                      ? 'cursor-pointer hover:bg-green-100 border-2 border-dashed border-gray-300'
+                                      : 'border-2 border-transparent'
+                                    : 'border-2 border-transparent'
+                                }`}
+                              >
+                                {mp ? (
+                                  <>
+                                    <span className="font-medium text-slate-900 truncate">
+                                      {mp.player.name}
+                                    </span>
+                                    <span className="text-xs font-mono text-slate-500 ml-2 flex-shrink-0">
+                                      {Math.round(mp.player.level)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400 italic text-xs">Tom position</span>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
 
                         {/* VS Divider */}
@@ -216,19 +267,45 @@ export function TrainingCourtViewRedesign({
                           <div className="text-xs font-bold text-red-600 uppercase tracking-wide">
                             Hold 2
                           </div>
-                          {team2.map((mp, idx) => (
-                            <div
-                              key={mp.player.id}
-                              className="flex items-center justify-between text-sm"
-                            >
-                              <span className="font-medium text-slate-900 truncate">
-                                {mp.player.name}
-                              </span>
-                              <span className="text-xs font-mono text-slate-500 ml-2 flex-shrink-0">
-                                {Math.round(mp.player.level)}
-                              </span>
-                            </div>
-                          ))}
+                          {[1, 2].map(position => {
+                            const mp = team2.find(p => p.position === position)
+                            const isSelected = selectedMatchPlayer?.playerId === mp?.player.id
+                            return (
+                              <div
+                                key={position}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (trainingStatus === 'IN_PROGRESS' && !isCompleted) {
+                                    onClickPlayerPosition(match.id, 2, position, mp?.player.id)
+                                  }
+                                }}
+                                className={`flex items-center justify-between text-sm p-2 rounded transition-all min-h-[44px] ${
+                                  trainingStatus === 'IN_PROGRESS' && !isCompleted
+                                    ? isSelected
+                                      ? 'cursor-pointer bg-red-200 border-2 border-red-500 shadow-md'
+                                      : mp
+                                      ? 'cursor-pointer hover:bg-red-50 border-2 border-transparent hover:border-red-300'
+                                      : selectedBenchPlayer || selectedMatchPlayer
+                                      ? 'cursor-pointer hover:bg-green-100 border-2 border-dashed border-gray-300'
+                                      : 'border-2 border-transparent'
+                                    : 'border-2 border-transparent'
+                                }`}
+                              >
+                                {mp ? (
+                                  <>
+                                    <span className="font-medium text-slate-900 truncate">
+                                      {mp.player.name}
+                                    </span>
+                                    <span className="text-xs font-mono text-slate-500 ml-2 flex-shrink-0">
+                                      {Math.round(mp.player.level)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400 italic text-xs">Tom position</span>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
 

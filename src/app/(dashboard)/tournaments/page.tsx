@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TournamentsListRedesign } from '@/components/tournament/tournaments-list-redesign'
+import { TournamentsListClean } from '@/components/tournament/tournaments-list-clean'
 
 interface Tournament {
   id: string
@@ -42,7 +42,7 @@ export default function TournamentsPage() {
   }
 
   return (
-    <TournamentsListRedesign
+    <TournamentsListClean
       tournaments={tournaments}
       loading={loading}
       onCreateClick={() => router.push('/tournaments/new')}
