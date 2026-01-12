@@ -153,7 +153,7 @@ export function TrainingsListClean({
           </Button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {trainings.map((training) => {
             const config = statusConfig[training.status as keyof typeof statusConfig] || statusConfig.PLANNED
             const trainingDate = new Date(training.date)
@@ -162,56 +162,55 @@ export function TrainingsListClean({
               <div
                 key={training.id}
                 onClick={() => router.push(`/trainings/${training.id}`)}
-                className="group bg-card border rounded-lg p-5 hover:shadow-md transition-all cursor-pointer"
+                className="group bg-card border rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer touch-manipulation"
               >
-                <div className="flex items-start gap-6">
-                  {/* Date Block */}
-                  <div className="text-center flex-shrink-0 px-4 py-3 rounded-lg bg-muted/50">
-                    <div className="text-3xl font-bold text-[#005A9C]">
-                      {format(trainingDate, 'd', { locale: da })}
-                    </div>
-                    <div className="text-xs text-muted-foreground uppercase mt-1">
-                      {format(trainingDate, 'MMM', { locale: da })}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {format(trainingDate, 'yyyy', { locale: da })}
-                    </div>
-                  </div>
+                {/* Status bar */}
+                <div className={`h-1.5 ${
+                  training.status === 'IN_PROGRESS' ? 'bg-orange-500' :
+                  training.status === 'COMPLETED' ? 'bg-green-500' :
+                  training.status === 'CANCELLED' ? 'bg-muted' :
+                  'bg-[#005A9C]'
+                }`} />
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div>
-                        <h3 className="text-xl font-semibold mb-2 group-hover:text-[#005A9C] transition-colors">
-                          {training.name}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${config.bg} ${config.color}`}>
-                            {config.label}
-                          </span>
+                <div className="p-4">
+                  {/* Date and Status */}
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="text-center px-3 py-2 rounded-lg bg-muted/50">
+                        <div className="text-2xl font-bold text-[#005A9C]">
+                          {format(trainingDate, 'd', { locale: da })}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground uppercase">
+                          {format(trainingDate, 'MMM', { locale: da })}
                         </div>
                       </div>
-
-                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-[#005A9C] transition-colors flex-shrink-0" />
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>{training.trainingPlayers.length} spillere</span>
+                      <div>
+                        <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
+                          {config.label}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Activity className="h-4 w-4" />
-                        <span>{training.courts} baner</span>
-                      </div>
-                      {training._count.matches > 0 && (
-                        <>
-                          <span>·</span>
-                          <span>{training._count.matches} kampe</span>
-                        </>
-                      )}
                     </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-[#005A9C] transition-colors flex-shrink-0 mt-1" />
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="font-semibold text-sm mb-3 group-hover:text-[#005A9C] transition-colors line-clamp-2">
+                    {training.name}
+                  </h3>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground pt-3 border-t">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5" />
+                      <span>{training.trainingPlayers.length}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Activity className="h-3.5 w-3.5" />
+                      <span>{training.courts} baner</span>
+                    </div>
+                    {training._count.matches > 0 && (
+                      <span className="ml-auto">{training._count.matches} kampe</span>
+                    )}
                   </div>
                 </div>
               </div>
