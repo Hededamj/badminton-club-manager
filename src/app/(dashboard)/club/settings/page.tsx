@@ -256,15 +256,9 @@ export default function ClubSettingsPage() {
               <p className="text-sm text-muted-foreground mb-3">
                 Upload et logo til din klub. Logoet vises i menuen og på klubsider.
               </p>
-              <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
-                <p className="font-medium">Anbefalinger:</p>
-                <ul className="text-muted-foreground space-y-0.5">
-                  <li>Størrelse: <span className="font-mono text-foreground">200x200 px</span> (min. 100x100 px)</li>
-                  <li>Format: JPG, PNG, WebP eller SVG</li>
-                  <li>Max filstørrelse: 500 KB</li>
-                  <li>Kvadratisk format anbefales</li>
-                </ul>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                JPG, PNG, WebP eller SVG · Max 500 KB
+              </p>
             </div>
 
             {(isOwner || club?.userRole === 'ADMIN') && (
