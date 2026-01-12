@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- White version for dark backgrounds -->
+  <g opacity="0.95">
+    <!-- Shuttlecock feathers -->
+    <path d="M30 15 L30 45 Q30 50 35 52 L35 20 Q35 17 30 15" fill="#ffffff" opacity="0.85"/>
+    <path d="M38 18 L38 54 Q38 56 42 57 L42 22 Q42 19 38 18" fill="#ffffff" opacity="0.95"/>
+    <path d="M45 20 L45 58 Q45 60 50 60 L50 24 Q50 21 45 20" fill="#ffffff"/>
+
+    <path d="M70 15 L70 45 Q70 50 65 52 L65 20 Q65 17 70 15" fill="#ffffff" opacity="0.85"/>
+    <path d="M62 18 L62 54 Q62 56 58 57 L58 22 Q58 19 62 18" fill="#ffffff" opacity="0.95"/>
+    <path d="M55 20 L55 58 Q55 60 50 60 L50 24 Q50 21 55 20" fill="#ffffff"/>
+
+    <!-- Grid lines -->
+    <rect x="32" y="28" width="36" height="2" rx="1" fill="#ffffff" opacity="0.3"/>
+    <rect x="34" y="38" width="32" height="2" rx="1" fill="#ffffff" opacity="0.2"/>
+    <rect x="38" y="48" width="24" height="2" rx="1" fill="#ffffff" opacity="0.15"/>
+
+    <!-- Cork -->
+    <circle cx="50" cy="72" r="16" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+
+    <!-- Calendar icon -->
+    <rect x="43" y="66" width="14" height="12" rx="2" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+    <line x1="43" y1="70" x2="57" y2="70" stroke="#ffffff" stroke-width="1.5"/>
+    <line x1="47" y1="66" x2="47" y2="68" stroke="#ffffff" stroke-width="1.5"/>
+    <line x1="53" y1="66" x2="53" y2="68" stroke="#ffffff" stroke-width="1.5"/>
+    <path d="M46 75 L49 78 L55 72" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

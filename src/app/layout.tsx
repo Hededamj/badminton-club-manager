@@ -8,6 +8,12 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "CourtPlanner - Trænings & Turneringssystem",
   description: "Administrationssystem for badminton træninger og turneringer",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
