@@ -189,15 +189,15 @@ export function PlayersListRedesign({
                 />
 
                 {/* Card Content */}
-                <div className="p-5">
+                <div className="p-4 sm:p-5">
                   {/* Header with ELO and Gender */}
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4">
                     {/* Large ELO Number */}
                     <div>
-                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-0.5 sm:mb-1">
                         ELO Rating
                       </div>
-                      <div className="text-5xl font-black text-slate-900 leading-none">
+                      <div className="text-3xl sm:text-5xl font-black text-slate-900 leading-none">
                         {Math.round(player.level)}
                       </div>
                     </div>
@@ -215,34 +215,34 @@ export function PlayersListRedesign({
                     onClick={() => router.push(`/players/${player.id}`)}
                     className="w-full text-left group/name"
                   >
-                    <h3 className="text-lg font-bold text-slate-900 mb-1 line-clamp-2 group-hover/name:text-blue-600 transition-colors">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-0.5 sm:mb-1 line-clamp-2 group-hover/name:text-blue-600 transition-colors">
                       {player.name}
                     </h3>
                   </button>
 
                   {/* Email - only show if exists */}
                   {player.email ? (
-                    <p className="text-sm text-slate-600 mb-4 truncate">
+                    <p className="text-xs sm:text-sm text-slate-600 mb-3 sm:mb-4 truncate">
                       {player.email}
                     </p>
                   ) : (
-                    <div className="mb-4"></div>
+                    <div className="mb-3 sm:mb-4"></div>
                   )}
 
                   {/* Stats */}
                   {hasStats ? (
-                    <div className="space-y-3 mt-4">
+                    <div className="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
                       {/* Win Rate Bar */}
                       <div>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                             Win Rate
                           </span>
-                          <span className="text-2xl font-black text-slate-900">
+                          <span className="text-lg sm:text-2xl font-black text-slate-900">
                             {winRate}%
                           </span>
                         </div>
-                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-1.5 sm:h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all"
                             style={{ width: `${winRate}%` }}
@@ -251,39 +251,39 @@ export function PlayersListRedesign({
                       </div>
 
                       {/* Match Stats */}
-                      <div className="flex items-center gap-4 text-sm">
-                        <div>
+                      <div className="flex items-center justify-between sm:justify-start sm:gap-4 text-sm">
+                        <div className="text-center sm:text-left">
                           <div className="text-xs text-slate-600 font-medium">Kampe</div>
-                          <div className="text-xl font-black text-slate-900">
+                          <div className="text-base sm:text-xl font-black text-slate-900">
                             {player.statistics?.totalMatches || 0}
                           </div>
                         </div>
-                        <div className="w-px h-8 bg-slate-200" />
-                        <div>
+                        <div className="w-px h-6 sm:h-8 bg-slate-200" />
+                        <div className="text-center sm:text-left">
                           <div className="text-xs text-slate-600 font-medium">Sejre</div>
-                          <div className="text-xl font-black text-green-600">
+                          <div className="text-base sm:text-xl font-black text-green-600">
                             {player.statistics?.wins || 0}
                           </div>
                         </div>
-                        <div className="w-px h-8 bg-slate-200" />
-                        <div>
+                        <div className="w-px h-6 sm:h-8 bg-slate-200" />
+                        <div className="text-center sm:text-left">
                           <div className="text-xs text-slate-600 font-medium">Tab</div>
-                          <div className="text-xl font-black text-red-600">
+                          <div className="text-base sm:text-xl font-black text-red-600">
                             {player.statistics?.losses || 0}
                           </div>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-4 text-center py-3 bg-slate-50 rounded-lg">
+                    <div className="mt-3 sm:mt-4 text-center py-2 sm:py-3 bg-slate-50 rounded-lg">
                       <p className="text-xs text-slate-500 font-medium">
                         Ingen kampe endnu
                       </p>
                     </div>
                   )}
 
-                  {/* Status Badge */}
-                  <div className="mt-4">
+                  {/* Status Badge and Actions */}
+                  <div className="mt-3 sm:mt-4 flex items-center justify-between">
                     <Badge
                       className={`
                         ${player.isActive ? 'bg-green-100 text-green-900' : 'bg-slate-100 text-slate-700'}
@@ -292,11 +292,45 @@ export function PlayersListRedesign({
                     >
                       {player.isActive ? 'Aktiv' : 'Inaktiv'}
                     </Badge>
+
+                    {/* Mobile Actions - always visible on mobile, hidden on desktop */}
+                    <div className="flex gap-1 sm:hidden">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEdit(player)
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDelete(player)
+                        }}
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => router.push(`/players/${player.id}`)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Hover Actions */}
-                <div className="absolute top-14 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Desktop Hover Actions - hidden on mobile */}
+                <div className="hidden sm:flex absolute top-14 right-4 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     size="sm"
                     variant="secondary"
@@ -321,8 +355,8 @@ export function PlayersListRedesign({
                   </Button>
                 </div>
 
-                {/* Click to View Arrow */}
-                <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Desktop Click to View Arrow - hidden on mobile */}
+                <div className="hidden sm:block absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => router.push(`/players/${player.id}`)}
                     className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors"
