@@ -166,8 +166,8 @@ export function TrainingCourtViewRedesign({
                 </div>
               )}
 
-              {/* Match Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              {/* Match Grid - Horizontal scroll */}
+              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
                 {roundMatches.map(match => {
                   const team1 = match.matchPlayers.filter(mp => mp.team === 1)
                   const team2 = match.matchPlayers.filter(mp => mp.team === 2)
@@ -177,7 +177,7 @@ export function TrainingCourtViewRedesign({
                   return (
                     <div
                       key={match.id}
-                      className="group relative bg-white rounded-xl border-2 border-slate-200 overflow-hidden hover:border-slate-300 transition-all hover:shadow-lg"
+                      className="group relative bg-white rounded-xl border-2 border-slate-200 overflow-hidden hover:border-slate-300 transition-all hover:shadow-lg flex-shrink-0 w-[280px] md:w-[220px] snap-start"
                     >
                       {/* Match Type Color Bar */}
                       <div
