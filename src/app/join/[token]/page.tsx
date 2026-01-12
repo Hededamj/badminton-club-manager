@@ -65,10 +65,9 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
       const data = await response.json()
 
       if (response.ok) {
-        const data_result = await response.json()
         setSuccess(true)
         // Update session with new club
-        await updateSession({ clubId: data_result.club.id })
+        await updateSession({ clubId: data.club.id })
         // Redirect to dashboard after 2 seconds
         setTimeout(() => {
           window.location.href = '/dashboard'
