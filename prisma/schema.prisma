@@ -16,7 +16,7 @@ model Club {
   name            String    @db.VarChar(255)
   slug            String    @unique @db.VarChar(100)
   description     String?   @db.Text
-  logo            String?   @db.VarChar(500)
+  logo            String?   @db.Text
   settings        Json?
   holdsportTeamId String?   @unique @map("holdsport_team_id")
   isActive        Boolean   @default(true) @map("is_active")
