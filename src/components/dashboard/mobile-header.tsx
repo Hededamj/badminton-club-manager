@@ -46,20 +46,20 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   const userInitial = session?.user?.email?.charAt(0).toUpperCase() || 'U'
 
   return (
-    <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-card border-b z-30 flex items-center justify-between px-3">
+    <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-[#005A9C] z-30 flex items-center justify-between px-3">
       {/* Left: Menu + Club */}
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           size="icon"
           onClick={onMenuClick}
-          className="h-9 w-9"
+          className="h-9 w-9 text-white hover:bg-white/20"
         >
           <Menu className="h-5 w-5" />
         </Button>
 
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+          <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center overflow-hidden">
             {currentClub?.logo ? (
               <Image
                 src={currentClub.logo}
@@ -69,10 +69,10 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
                 className="w-full h-full object-contain"
               />
             ) : (
-              <Building2 className="w-4 h-4 text-primary" />
+              <Building2 className="w-4 h-4 text-white" />
             )}
           </div>
-          <span className="font-semibold text-sm truncate max-w-[120px]">
+          <span className="font-semibold text-sm truncate max-w-[120px] text-white">
             {currentClub?.name || session?.user?.currentClubName || 'Min Klub'}
           </span>
         </div>
@@ -82,13 +82,13 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
       <div className="relative">
         <button
           onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-          className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-accent transition-colors"
+          className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-white/20 transition-colors"
         >
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-medium text-primary">{userInitial}</span>
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+            <span className="text-sm font-medium text-white">{userInitial}</span>
           </div>
           <ChevronDown className={cn(
-            "w-3 h-3 text-muted-foreground transition-transform",
+            "w-3 h-3 text-white/70 transition-transform",
             isUserMenuOpen && "rotate-180"
           )} />
         </button>
