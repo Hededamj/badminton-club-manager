@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
@@ -11,30 +11,67 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 
-function LoginForm() {
+function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const redirectUrl = searchParams.get('redirect') || '/dashboard'
+  // Pre-fill email from query param (from invitation)
+  useEffect(() => {
+    const emailParam = searchParams.get('email')
+    if (emailParam) {
+      setEmail(emailParam)
+    }
+  }, [searchParams])
+
+  const redirectUrl = searchParams.get('redirect') || '/onboarding'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (password !== confirmPassword) {
+      setError('Adgangskoderne matcher ikke')
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Adgangskode skal være mindst 6 tegn')
+      return
+    }
+
     setLoading(true)
 
     try {
-      const result = await signIn('credentials', {
+      // Register user
+      const registerResponse = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const registerData = await registerResponse.json()
+
+      if (!registerResponse.ok) {
+        setError(registerData.error || 'Kunne ikke oprette bruger')
+        setLoading(false)
+        return
+      }
+
+      // Sign in automatically
+      const signInResult = await signIn('credentials', {
         email,
         password,
         redirect: false,
       })
 
-      if (result?.error) {
-        setError('Forkert email eller adgangskode')
+      if (signInResult?.error) {
+        setError('Bruger oprettet, men kunne ikke logge ind automatisk')
+        router.push('/login')
       } else {
         router.push(redirectUrl)
         router.refresh()
@@ -54,16 +91,16 @@ function LoginForm() {
             <Image
               src="/logo.png"
               alt="CourtPlanner"
-              width={100}
-              height={100}
+              width={80}
+              height={80}
               className="rounded-lg"
             />
             <div className="text-center">
-              <CardTitle className="text-3xl font-bold text-[#005A9C]">
-                CourtPlanner
+              <CardTitle className="text-2xl font-bold text-[#005A9C]">
+                Opret konto
               </CardTitle>
               <CardDescription className="text-base mt-2">
-                Log ind for at administrere træninger og turneringer
+                Opret en konto for at komme i gang med CourtPlanner
               </CardDescription>
             </div>
           </div>
@@ -87,9 +124,22 @@ function LoginForm() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Mindst 6 tegn"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                minLength={6}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Bekræft adgangskode</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Gentag adgangskode"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={loading}
               />
@@ -100,17 +150,24 @@ function LoginForm() {
               </div>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Logger ind...' : 'Log ind'}
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Opretter konto...
+                </>
+              ) : (
+                'Opret konto'
+              )}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Har du ikke en konto? </span>
+            <span className="text-muted-foreground">Har du allerede en konto? </span>
             <Link
-              href={redirectUrl !== '/dashboard' ? `/register?redirect=${encodeURIComponent(redirectUrl)}` : '/register'}
+              href={redirectUrl !== '/onboarding' ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : '/login'}
               className="text-primary hover:underline font-medium"
             >
-              Opret konto
+              Log ind
             </Link>
           </div>
         </CardContent>
@@ -119,14 +176,14 @@ function LoginForm() {
   )
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     }>
-      <LoginForm />
+      <RegisterForm />
     </Suspense>
   )
 }
