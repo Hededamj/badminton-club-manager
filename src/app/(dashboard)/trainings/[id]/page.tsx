@@ -477,34 +477,34 @@ export default function TrainingDetailPage() {
         setError('Kunne ikke gemme ændringen')
       }
     } else {
-        // Swapping between different matches - need to update both matches
-        const sourceMatch = training.matches.find(m => m.id === selectedMatchPlayer.matchId)
-        const targetMatch = training.matches.find(m => m.id === targetMatchId)
+      // Swapping between different matches - need to update both matches
+      const sourceMatch = training.matches.find(m => m.id === selectedMatchPlayer.matchId)
+      const targetMatch = training.matches.find(m => m.id === targetMatchId)
 
-        if (!sourceMatch || !targetMatch) return
+      if (!sourceMatch || !targetMatch) return
 
-        // Update source match: remove selected player, add target player if exists
-        let sourcePlayers = sourceMatch.matchPlayers
-          .filter(mp => mp.player.id !== selectedMatchPlayer.playerId)
-          .map(mp => ({
-            playerId: mp.player.id,
-            team: mp.team,
-            position: mp.position,
-          }))
+      // Update source match: remove selected player, add target player if exists
+      let sourcePlayers = sourceMatch.matchPlayers
+        .filter(mp => mp.player.id !== selectedMatchPlayer.playerId)
+        .map(mp => ({
+          playerId: mp.player.id,
+          team: mp.team,
+          position: mp.position,
+        }))
 
-        if (targetPlayerId) {
-          sourcePlayers.push({
-            playerId: targetPlayerId,
-            team: selectedMatchPlayer.team,
-            position: selectedMatchPlayer.position,
-          })
-        }
+      if (targetPlayerId) {
+        sourcePlayers.push({
+          playerId: targetPlayerId,
+          team: selectedMatchPlayer.team,
+          position: selectedMatchPlayer.position,
+        })
+      }
 
+      setSelectedMatchPlayer(null)
+
+      try {
         // To avoid validation errors, we need to update in 3 steps:
         // Step 1: Remove selectedPlayer from source match (without adding targetPlayer yet)
-        // Step 2: Update target match (remove targetPlayer, add selectedPlayer)
-        // Step 3: Add targetPlayer to source match (if there is one)
-
         const sourcePlayersWithoutSelected = sourceMatch.matchPlayers
           .filter(mp => mp.player.id !== selectedMatchPlayer.playerId)
           .map(mp => ({
@@ -520,8 +520,7 @@ export default function TrainingDetailPage() {
         })
 
         if (!sourceRes1.ok) {
-          const errorData = await sourceRes1.json()
-          throw new Error('Kunne ikke fjerne spiller fra kildekamp: ' + (errorData.error || ''))
+          throw new Error('Kunne ikke fjerne spiller fra kildekamp')
         }
 
         // Step 2: Update target match (remove targetPlayer if exists, add selectedPlayer)
@@ -546,14 +545,10 @@ export default function TrainingDetailPage() {
         })
 
         if (!targetRes.ok) {
-          const errorData = await targetRes.json()
-          throw new Error('Kunne ikke opdatere målkamp: ' + (errorData.error || ''))
+          throw new Error('Kunne ikke opdatere målkamp')
         }
 
-        const targetData = await targetRes.json()
-
         // Step 3: Add targetPlayer to source match (if there is one)
-        let sourceData
         if (targetPlayerId) {
           const sourceRes2 = await fetch(`/api/trainings/${training.id}/matches/${selectedMatchPlayer.matchId}`, {
             method: 'PATCH',
@@ -562,36 +557,17 @@ export default function TrainingDetailPage() {
           })
 
           if (!sourceRes2.ok) {
-            const errorData = await sourceRes2.json()
-            throw new Error('Kunne ikke tilføje spiller til kildekamp: ' + (errorData.error || ''))
+            throw new Error('Kunne ikke tilføje spiller til kildekamp')
           }
-
-          sourceData = await sourceRes2.json()
-        } else {
-          // No target player, so just use the result from step 1
-          sourceData = await sourceRes1.json()
         }
 
-        // Update training state with both updated matches
-        setTraining(prev => {
-          if (!prev) return prev
-          return {
-            ...prev,
-            matches: prev.matches.map(m => {
-              if (m.id === selectedMatchPlayer.matchId) return sourceData.match
-              if (m.id === targetMatchId) return targetData.match
-              return m
-            })
-          }
-        })
+        // Refresh to get updated data
+        refreshTraining()
+      } catch (err) {
+        setTraining(previousTraining)
+        setError('Kunne ikke gemme ændringen')
+        fetchTraining()
       }
-
-      setSelectedMatchPlayer(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Der opstod en fejl')
-      fetchTraining()
-    } finally {
-      setSwapping(false)
     }
   }
 
