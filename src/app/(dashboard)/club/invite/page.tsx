@@ -39,6 +39,8 @@ export default function InvitePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null)
+  const [copiedInviteUrl, setCopiedInviteUrl] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -82,7 +84,8 @@ export default function InvitePage() {
       const data = await response.json()
 
       if (response.ok) {
-        setSuccess(`Invitation sendt til ${email}`)
+        setLastInviteUrl(data.invitation.inviteUrl)
+        setSuccess(`Invitation oprettet til ${email}`)
         setEmail('')
         fetchInvitations()
       } else {
@@ -181,7 +184,32 @@ export default function InvitePage() {
 
         {success && (
           <div className="bg-green-500/10 text-green-600 px-4 py-3 rounded-lg mb-4">
-            {success}
+            <p className="font-medium">{success}</p>
+            {lastInviteUrl && (
+              <div className="mt-3 p-3 bg-background rounded-lg border">
+                <p className="text-sm text-muted-foreground mb-2">Del dette link med personen:</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono break-all text-foreground">
+                    {lastInviteUrl}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(lastInviteUrl)
+                      setCopiedInviteUrl(true)
+                      setTimeout(() => setCopiedInviteUrl(false), 2000)
+                    }}
+                    className="flex-shrink-0 p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                  >
+                    {copiedInviteUrl ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
