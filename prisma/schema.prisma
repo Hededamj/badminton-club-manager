@@ -268,9 +268,10 @@ model MatchPlayer {
 model MatchResult {
   id            String   @id @default(uuid())
   matchId       String   @unique @map("match_id")
-  team1Score    Int      @map("team1_score")
-  team2Score    Int      @map("team2_score")
+  team1Score    Int      @map("team1_score")  // Number of sets won by team 1
+  team2Score    Int      @map("team2_score")  // Number of sets won by team 2
   winningTeam   Int      @map("winning_team") // 1 or 2
+  sets          Json?    // Array of set scores: [{team1: 21, team2: 19}, ...]
   levelChange   Json?    @map("level_change") // {playerId: change}
   createdAt     DateTime @default(now()) @map("created_at")
 

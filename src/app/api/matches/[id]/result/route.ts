@@ -16,14 +16,41 @@ export async function POST(
     }
 
     const body = await req.json()
-    const { team1Score, team2Score, winningTeam } = body
+    const { team1Score, team2Score, winningTeam, sets } = body
 
-    // Support both detailed scores and simple winner selection
-    let finalTeam1Score: number
-    let finalTeam2Score: number
+    // Support multiple input formats:
+    // 1. Sets array: [{team1: 21, team2: 19}, {team1: 21, team2: 15}]
+    // 2. Simple scores (legacy): team1Score, team2Score
+    // 3. Quick winner selection: winningTeam
 
-    if (team1Score !== undefined && team2Score !== undefined) {
-      // Detailed scores provided
+    let finalTeam1Score: number  // Number of sets won
+    let finalTeam2Score: number  // Number of sets won
+    let finalSets: Array<{ team1: number; team2: number }> | null = null
+
+    if (sets && Array.isArray(sets) && sets.length > 0) {
+      // Sets array provided - calculate sets won
+      finalSets = sets
+      let team1SetsWon = 0
+      let team2SetsWon = 0
+
+      for (const set of sets) {
+        if (typeof set.team1 !== 'number' || typeof set.team2 !== 'number') {
+          return NextResponse.json(
+            { error: 'Ugyldige sæt scores' },
+            { status: 400 }
+          )
+        }
+        if (set.team1 > set.team2) {
+          team1SetsWon++
+        } else if (set.team2 > set.team1) {
+          team2SetsWon++
+        }
+      }
+
+      finalTeam1Score = team1SetsWon
+      finalTeam2Score = team2SetsWon
+    } else if (team1Score !== undefined && team2Score !== undefined) {
+      // Legacy: detailed scores provided (single set)
       if (
         typeof team1Score !== 'number' ||
         typeof team2Score !== 'number' ||
@@ -35,15 +62,20 @@ export async function POST(
           { status: 400 }
         )
       }
-      finalTeam1Score = team1Score
-      finalTeam2Score = team2Score
+      // Store as single set
+      finalSets = [{ team1: team1Score, team2: team2Score }]
+      finalTeam1Score = team1Score > team2Score ? 1 : 0
+      finalTeam2Score = team2Score > team1Score ? 1 : 0
     } else if (winningTeam === 1 || winningTeam === 2) {
-      // Simple winner selection - use default scores
-      finalTeam1Score = winningTeam === 1 ? 21 : 0
-      finalTeam2Score = winningTeam === 2 ? 21 : 0
+      // Simple winner selection - use default scores (2-0 in sets)
+      finalTeam1Score = winningTeam === 1 ? 2 : 0
+      finalTeam2Score = winningTeam === 2 ? 2 : 0
+      finalSets = winningTeam === 1
+        ? [{ team1: 21, team2: 0 }, { team1: 21, team2: 0 }]
+        : [{ team1: 0, team2: 21 }, { team1: 0, team2: 21 }]
     } else {
       return NextResponse.json(
-        { error: 'Either provide scores or specify winning team' },
+        { error: 'Either provide sets, scores, or specify winning team' },
         { status: 400 }
       )
     }
@@ -120,12 +152,14 @@ export async function POST(
           team1Score: finalTeam1Score,
           team2Score: finalTeam2Score,
           winningTeam: team1Won ? 1 : 2,
+          sets: finalSets,
           levelChange,
         },
         update: {
           team1Score: finalTeam1Score,
           team2Score: finalTeam2Score,
           winningTeam: team1Won ? 1 : 2,
+          sets: finalSets,
           levelChange,
         },
       })
