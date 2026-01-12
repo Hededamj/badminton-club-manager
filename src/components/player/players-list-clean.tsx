@@ -1,9 +1,11 @@
 'use client'
 
-import { Plus, Search, Upload, ChevronRight, Pencil, Trash2, User } from 'lucide-react'
+import { useState } from 'react'
+import { Plus, Search, Upload, ChevronRight, Pencil, Trash2, User, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 interface Player {
   id: string
@@ -41,6 +43,7 @@ export function PlayersListClean({
   onDelete,
 }: PlayersListCleanProps) {
   const router = useRouter()
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   const getWinRate = (player: Player) => {
     if (!player.statistics?.totalMatches || player.statistics.totalMatches === 0) {
@@ -81,15 +84,45 @@ export function PlayersListClean({
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Søg efter spillere..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search and View Toggle */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Søg efter spillere..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* View Toggle */}
+        <div className="flex items-center border rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={cn(
+              "p-2 rounded transition-colors touch-manipulation",
+              viewMode === 'grid'
+                ? "bg-[#005A9C] text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+            title="Kort visning"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={cn(
+              "p-2 rounded transition-colors touch-manipulation",
+              viewMode === 'list'
+                ? "bg-[#005A9C] text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+            title="Liste visning"
+          >
+            <List className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Players Grid */}
@@ -115,7 +148,8 @@ export function PlayersListClean({
             Tilføj spiller
           </Button>
         </div>
-      ) : (
+      ) : viewMode === 'grid' ? (
+        /* Grid View */
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {players.map((player) => {
             const winRate = getWinRate(player)
@@ -239,6 +273,115 @@ export function PlayersListClean({
               </div>
             )
           })}
+        </div>
+      ) : (
+        /* List View */
+        <div className="bg-card border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left px-4 py-3 text-sm font-medium">Navn</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium hidden sm:table-cell">Køn</th>
+                  <th className="text-center px-4 py-3 text-sm font-medium">ELO</th>
+                  <th className="text-center px-4 py-3 text-sm font-medium hidden md:table-cell">Kampe</th>
+                  <th className="text-center px-4 py-3 text-sm font-medium hidden md:table-cell">Sejre</th>
+                  <th className="text-center px-4 py-3 text-sm font-medium hidden lg:table-cell">Sejrsrate</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium hidden sm:table-cell">Status</th>
+                  <th className="w-24"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {players.map((player) => {
+                  const winRate = getWinRate(player)
+                  return (
+                    <tr
+                      key={player.id}
+                      className="border-b last:border-0 hover:bg-muted/30 transition-colors group"
+                    >
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => router.push(`/players/${player.id}`)}
+                          className="font-medium hover:text-[#005A9C] transition-colors text-left"
+                        >
+                          {player.name}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">
+                        {player.gender === 'MALE' && 'Mand'}
+                        {player.gender === 'FEMALE' && 'Kvinde'}
+                        {!player.gender && '-'}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="font-bold text-[#005A9C]">{Math.round(player.level)}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm hidden md:table-cell">
+                        {player.statistics?.totalMatches || 0}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm hidden md:table-cell">
+                        <span className="text-green-600 font-medium">{player.statistics?.wins || 0}</span>
+                      </td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <div className="flex items-center gap-2 justify-center">
+                          <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-[#005A9C] rounded-full"
+                              style={{ width: `${winRate}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground w-8">{winRate}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <span className={cn(
+                          "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
+                          player.isActive
+                            ? "bg-[#005A9C]/10 text-[#005A9C]"
+                            : "bg-muted text-muted-foreground"
+                        )}>
+                          {player.isActive ? 'Aktiv' : 'Inaktiv'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onEdit(player)
+                            }}
+                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onDelete(player)
+                            }}
+                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => router.push(`/players/${player.id}`)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
