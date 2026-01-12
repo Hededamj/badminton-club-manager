@@ -91,6 +91,7 @@ export default function TrainingDetailPage() {
   const [swapping, setSwapping] = useState(false)
   const [showAddGuestDialog, setShowAddGuestDialog] = useState(false)
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false)
+  const [highlightedPlayers, setHighlightedPlayers] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchTraining()
@@ -454,6 +455,12 @@ export default function TrainingDetailPage() {
       })
       setSelectedMatchPlayer(null)
 
+      // Highlight the swapped players
+      const playersToHighlight = new Set<string>([selectedMatchPlayer.playerId])
+      if (targetPlayerId) playersToHighlight.add(targetPlayerId)
+      setHighlightedPlayers(playersToHighlight)
+      setTimeout(() => setHighlightedPlayers(new Set()), 800)
+
       // API call in background
       const updatedPlayers = optimisticMatchPlayers.map(mp => ({
         playerId: mp.player.id,
@@ -620,6 +627,10 @@ export default function TrainingDetailPage() {
       }
     })
     setSelectedBenchPlayer(null)
+
+    // Highlight the added player
+    setHighlightedPlayers(new Set([selectedBenchPlayer]))
+    setTimeout(() => setHighlightedPlayers(new Set()), 800)
 
     // API call in background
     const playersForApi = optimisticMatchPlayers.map(mp => ({
@@ -1041,6 +1052,7 @@ export default function TrainingDetailPage() {
                 onClickPlayerPosition={handleClickPlayerPosition}
                 onMoveToBench={handleMoveToBench}
                 trainingStatus={getTrainingStatus()}
+                highlightedPlayers={highlightedPlayers}
               />
             ) : (
               // List view (original)

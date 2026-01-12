@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Edit, Users, Check } from 'lucide-react'
@@ -41,10 +40,8 @@ interface TrainingCourtViewProps {
   onClickPlayerPosition: (matchId: string, team: number, position: number, currentPlayerId?: string) => void
   onMoveToBench: () => void
   trainingStatus: string
+  highlightedPlayers: Set<string>
 }
-
-// Track recently changed positions for highlight animation
-type PositionKey = string // format: "matchId-team-position"
 
 // Determine match type based on player genders
 function getMatchType(players: MatchPlayer[]): { type: 'HD' | 'DD' | 'MD' | null; color: string; label: string } {
@@ -73,56 +70,8 @@ export function TrainingCourtViewRedesign({
   onClickPlayerPosition,
   onMoveToBench,
   trainingStatus,
+  highlightedPlayers,
 }: TrainingCourtViewProps) {
-  // Track highlighted players for animation
-  const [highlightedPlayers, setHighlightedPlayers] = useState<Set<string>>(new Set())
-  const prevMatchesRef = useRef<string>('')
-
-  // Detect player changes and highlight them
-  useEffect(() => {
-    const currentMatchesJson = JSON.stringify(
-      matches.map(m => m.matchPlayers.map(mp => `${m.id}-${mp.team}-${mp.position}-${mp.player.id}`))
-    )
-
-    if (prevMatchesRef.current && prevMatchesRef.current !== currentMatchesJson) {
-      // Find which players changed
-      const prevPositions = new Map<string, string>()
-      const currentPositions = new Map<string, string>()
-
-      try {
-        const prevMatches = JSON.parse(prevMatchesRef.current) as string[][]
-        prevMatches.flat().forEach(pos => {
-          const parts = pos.split('-')
-          const key = `${parts[0]}-${parts[1]}-${parts[2]}`
-          prevPositions.set(key, parts[3])
-        })
-      } catch {}
-
-      matches.forEach(m => {
-        m.matchPlayers.forEach(mp => {
-          const key = `${m.id}-${mp.team}-${mp.position}`
-          currentPositions.set(key, mp.player.id)
-        })
-      })
-
-      // Find changed positions
-      const changedPlayerIds = new Set<string>()
-      currentPositions.forEach((playerId, key) => {
-        const prevPlayerId = prevPositions.get(key)
-        if (prevPlayerId !== playerId) {
-          changedPlayerIds.add(playerId)
-        }
-      })
-
-      if (changedPlayerIds.size > 0) {
-        setHighlightedPlayers(changedPlayerIds)
-        // Clear highlight after animation
-        setTimeout(() => setHighlightedPlayers(new Set()), 800)
-      }
-    }
-
-    prevMatchesRef.current = currentMatchesJson
-  }, [matches])
 
   // Group matches by round (matchNumber)
   const matchesPerRound = 3
@@ -283,14 +232,14 @@ export function TrainingCourtViewRedesign({
                                 }}
                                 className={`flex items-center justify-between p-2 rounded transition-all min-h-[44px] touch-manipulation ${
                                   isHighlighted
-                                    ? 'bg-green-200 border-2 border-green-500 animate-pulse'
+                                    ? 'bg-[#005A9C]/20 border-2 border-[#005A9C] animate-pulse'
                                     : trainingStatus === 'IN_PROGRESS' && !isCompleted
                                     ? isSelected
                                       ? 'cursor-pointer bg-blue-200 border-2 border-blue-500 shadow-md'
                                       : mp
                                       ? 'cursor-pointer hover:bg-blue-50 active:bg-blue-100 border-2 border-transparent hover:border-blue-300'
                                       : selectedBenchPlayer || selectedMatchPlayer
-                                      ? 'cursor-pointer hover:bg-green-100 active:bg-green-200 border-2 border-dashed border-gray-300'
+                                      ? 'cursor-pointer hover:bg-[#005A9C]/10 active:bg-[#005A9C]/20 border-2 border-dashed border-[#005A9C]/50'
                                       : 'border-2 border-transparent'
                                     : 'border-2 border-transparent'
                                 }`}
@@ -298,7 +247,7 @@ export function TrainingCourtViewRedesign({
                                 {mp ? (
                                   <div className="flex items-center justify-between w-full">
                                     {isHighlighted && (
-                                      <Check className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
+                                      <Check className="w-4 h-4 text-[#005A9C] mr-2 flex-shrink-0" />
                                     )}
                                     <span className="font-medium text-slate-900 text-sm leading-tight break-words flex-1 mr-2">
                                       {mp.player.name}
@@ -342,14 +291,14 @@ export function TrainingCourtViewRedesign({
                                 }}
                                 className={`flex items-center justify-between p-2 rounded transition-all min-h-[44px] touch-manipulation ${
                                   isHighlighted
-                                    ? 'bg-green-200 border-2 border-green-500 animate-pulse'
+                                    ? 'bg-[#005A9C]/20 border-2 border-[#005A9C] animate-pulse'
                                     : trainingStatus === 'IN_PROGRESS' && !isCompleted
                                     ? isSelected
                                       ? 'cursor-pointer bg-red-200 border-2 border-red-500 shadow-md'
                                       : mp
                                       ? 'cursor-pointer hover:bg-red-50 active:bg-red-100 border-2 border-transparent hover:border-red-300'
                                       : selectedBenchPlayer || selectedMatchPlayer
-                                      ? 'cursor-pointer hover:bg-green-100 active:bg-green-200 border-2 border-dashed border-gray-300'
+                                      ? 'cursor-pointer hover:bg-[#005A9C]/10 active:bg-[#005A9C]/20 border-2 border-dashed border-[#005A9C]/50'
                                       : 'border-2 border-transparent'
                                     : 'border-2 border-transparent'
                                 }`}
@@ -357,7 +306,7 @@ export function TrainingCourtViewRedesign({
                                 {mp ? (
                                   <div className="flex items-center justify-between w-full">
                                     {isHighlighted && (
-                                      <Check className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
+                                      <Check className="w-4 h-4 text-[#005A9C] mr-2 flex-shrink-0" />
                                     )}
                                     <span className="font-medium text-slate-900 text-sm leading-tight break-words flex-1 mr-2">
                                       {mp.player.name}
