@@ -132,12 +132,12 @@ export function PlayersListClean({
                 }`} />
 
                 {/* Header */}
-                <div className="flex items-start justify-between mb-3 sm:mb-4 mt-1 sm:mt-2">
+                <div className="flex items-start justify-between gap-2 mb-3 sm:mb-4 mt-1 sm:mt-2">
                   <button
                     onClick={() => router.push(`/players/${player.id}`)}
-                    className="flex-1 text-left"
+                    className="flex-1 min-w-0 text-left"
                   >
-                    <h3 className="font-semibold text-base sm:text-lg mb-0.5 sm:mb-1 group-hover:text-[#005A9C] transition-colors">
+                    <h3 className="font-semibold text-base sm:text-lg mb-0.5 sm:mb-1 group-hover:text-[#005A9C] transition-colors truncate">
                       {player.name}
                     </h3>
                     <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
@@ -151,9 +151,9 @@ export function PlayersListClean({
                   </button>
 
                   {/* ELO */}
-                  <div className="text-right ml-2">
+                  <div className="text-right flex-shrink-0">
                     <div className="text-xs text-muted-foreground mb-0.5 sm:mb-1">ELO</div>
-                    <div className="text-xl sm:text-2xl font-bold text-[#005A9C]">
+                    <div className="text-lg sm:text-2xl font-bold text-[#005A9C]">
                       {Math.round(player.level)}
                     </div>
                   </div>
