@@ -13,6 +13,7 @@ import { EditMatchDialog } from '@/components/match/edit-match-dialog'
 import { CourtView } from '@/components/match/court-view'
 import { TrainingCourtViewRedesign } from '@/components/training/training-court-view-redesign'
 import { AddGuestDialog } from '@/components/training/add-guest-dialog'
+import { AddPlayerDialog } from '@/components/training/add-player-dialog'
 
 interface Training {
   id: string
@@ -89,6 +90,7 @@ export default function TrainingDetailPage() {
   const [selectedMatchPlayer, setSelectedMatchPlayer] = useState<{playerId: string, matchId: string, team: number, position: number} | null>(null)
   const [swapping, setSwapping] = useState(false)
   const [showAddGuestDialog, setShowAddGuestDialog] = useState(false)
+  const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false)
 
   useEffect(() => {
     fetchTraining()
@@ -910,16 +912,26 @@ export default function TrainingDetailPage() {
                     {training.trainingPlayers.length} spillere deltager i træningen
                   </CardDescription>
                 </div>
-                <Button
-                  onClick={() => setShowAddGuestDialog(true)}
-                  size="sm"
-                  variant="outline"
-                  className="flex-shrink-0"
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Tilføj Gæst</span>
-                  <span className="sm:hidden">Gæst</span>
-                </Button>
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button
+                    onClick={() => setShowAddPlayerDialog(true)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Tilføj Spiller</span>
+                    <span className="sm:hidden">Spiller</span>
+                  </Button>
+                  <Button
+                    onClick={() => setShowAddGuestDialog(true)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Tilføj Gæst</span>
+                    <span className="sm:hidden">Gæst</span>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -1321,16 +1333,26 @@ export default function TrainingDetailPage() {
                 </CardDescription>
               </div>
               {(getTrainingStatus() === 'PLANNED' || getTrainingStatus() === 'IN_PROGRESS') && (
-                <Button
-                  onClick={() => setShowAddGuestDialog(true)}
-                  size="sm"
-                  variant="outline"
-                  className="flex-shrink-0"
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Tilføj Gæst</span>
-                  <span className="sm:hidden">Gæst</span>
-                </Button>
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button
+                    onClick={() => setShowAddPlayerDialog(true)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Tilføj Spiller</span>
+                    <span className="sm:hidden">Spiller</span>
+                  </Button>
+                  <Button
+                    onClick={() => setShowAddGuestDialog(true)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Tilføj Gæst</span>
+                    <span className="sm:hidden">Gæst</span>
+                  </Button>
+                </div>
               )}
             </div>
           </CardHeader>
@@ -1423,6 +1445,14 @@ export default function TrainingDetailPage() {
         open={showAddGuestDialog}
         onOpenChange={setShowAddGuestDialog}
         trainingId={params.id as string}
+        onSuccess={fetchTraining}
+      />
+
+      <AddPlayerDialog
+        open={showAddPlayerDialog}
+        onOpenChange={setShowAddPlayerDialog}
+        trainingId={params.id as string}
+        existingPlayerIds={training.trainingPlayers.map(tp => tp.player.id)}
         onSuccess={fetchTraining}
       />
     </div>
