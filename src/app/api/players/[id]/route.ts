@@ -1,24 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { updatePlayerSchema } from '@/lib/validators/player'
+import { requireClubMember, requireClubAdmin } from '@/lib/auth-helpers'
 
-// GET /api/players/:id - Get single player
+// GET /api/players/:id - Get single player (must belong to current club)
 export async function GET(
   req: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await requireClubMember()
 
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const clubId = session.user.currentClubId!
     const params = await props.params
-    const player = await db.player.findUnique({
-      where: { id: params.id },
+
+    const player = await db.player.findFirst({
+      where: {
+        id: params.id,
+        clubId,
+      },
       include: {
         statistics: true,
         user: {
@@ -44,19 +48,30 @@ export async function GET(
   }
 }
 
-// PATCH /api/players/:id - Update player
+// PATCH /api/players/:id - Update player (must belong to current club)
 export async function PATCH(
   req: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await requireClubAdmin()
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const clubId = session.user.currentClubId!
     const params = await props.params
+
+    // Verify player belongs to current club
+    const existingPlayer = await db.player.findFirst({
+      where: { id: params.id, clubId },
+    })
+
+    if (!existingPlayer) {
+      return NextResponse.json({ error: 'Player not found' }, { status: 404 })
+    }
+
     const body = await req.json()
     const validatedData = updatePlayerSchema.parse(body)
 
@@ -98,19 +113,29 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/players/:id - Delete player
+// DELETE /api/players/:id - Delete player (must belong to current club)
 export async function DELETE(
   req: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await requireClubAdmin()
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const clubId = session.user.currentClubId!
     const params = await props.params
+
+    // Verify player belongs to current club
+    const existingPlayer = await db.player.findFirst({
+      where: { id: params.id, clubId },
+    })
+
+    if (!existingPlayer) {
+      return NextResponse.json({ error: 'Player not found' }, { status: 404 })
+    }
 
     // Check if player has any matches
     const matchCount = await db.matchPlayer.count({

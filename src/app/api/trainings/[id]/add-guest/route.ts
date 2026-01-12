@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubAdmin } from '@/lib/auth-helpers'
 
 // POST /api/trainings/[id]/add-guest - Add a guest player to training
 export async function POST(
@@ -9,10 +8,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const resolvedParams = await params
     const { id: trainingId } = resolvedParams
@@ -41,9 +42,9 @@ export async function POST(
       )
     }
 
-    // Check if training exists
-    const training = await prisma.training.findUnique({
-      where: { id: trainingId },
+    // Check if training exists and belongs to current club
+    const training = await prisma.training.findFirst({
+      where: { id: trainingId, clubId },
     })
 
     if (!training) {
@@ -55,6 +56,7 @@ export async function POST(
       // Create the player with unique email (timestamp + random to avoid collisions)
       const player = await tx.player.create({
         data: {
+          clubId,
           name: name.trim(),
           email: `guest_${Date.now()}_${Math.random().toString(36).substring(7)}@temporary.local`, // Unique temporary email
           level: level,

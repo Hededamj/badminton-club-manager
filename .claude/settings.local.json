@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo view:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx prisma validate:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma migrate diff:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx tsx:*)"
+    ]
+  }
+}

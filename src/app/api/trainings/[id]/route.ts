@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
 import { updateTrainingSchema } from '@/lib/validators/training'
+import { requireClubMember, requireClubAdmin } from '@/lib/auth-helpers'
 
 // Force dynamic rendering - disable all caching
 export const dynamic = 'force-dynamic'
@@ -14,13 +13,15 @@ export async function GET(
 ) {
   try {
     const params = await props.params
-    const session = await getServerSession(authOptions)
+    const session = await requireClubMember()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const training = await prisma.training.findUnique({
-      where: { id: params.id },
+    const clubId = session.user.currentClubId!
+
+    const training = await prisma.training.findFirst({
+      where: { id: params.id, clubId },
       include: {
         trainingPlayers: {
           include: {
@@ -85,9 +86,20 @@ export async function PATCH(
 ) {
   try {
     const params = await props.params
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const clubId = session.user.currentClubId!
+
+    // Verify training belongs to current club
+    const existingTraining = await prisma.training.findFirst({
+      where: { id: params.id, clubId },
+    })
+
+    if (!existingTraining) {
+      return NextResponse.json({ error: 'Training not found' }, { status: 404 })
     }
 
     const body = await req.json()
@@ -162,9 +174,20 @@ export async function DELETE(
 ) {
   try {
     const params = await props.params
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const clubId = session.user.currentClubId!
+
+    // Verify training belongs to current club
+    const existingTraining = await prisma.training.findFirst({
+      where: { id: params.id, clubId },
+    })
+
+    if (!existingTraining) {
+      return NextResponse.json({ error: 'Training not found' }, { status: 404 })
     }
 
     // Delete training (cascade will handle related records)

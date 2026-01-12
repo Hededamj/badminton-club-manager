@@ -1,21 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
 import { createTrainingSchema } from '@/lib/validators/training'
+import { requireClubMember, requireClubAdmin } from '@/lib/auth-helpers'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await requireClubMember()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
     const limit = searchParams.get('limit')
 
-    const where: any = {}
+    const where: any = { clubId }
     if (status && status !== 'ALL') {
       where.status = status
     }
@@ -59,10 +60,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const body = await req.json()
     const validatedData = createTrainingSchema.parse(body)
@@ -70,6 +73,7 @@ export async function POST(req: NextRequest) {
     // Create training with players
     const training = await prisma.training.create({
       data: {
+        clubId,
         name: validatedData.name,
         date: new Date(validatedData.date),
         courts: validatedData.courts,

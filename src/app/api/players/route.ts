@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { createPlayerSchema } from '@/lib/validators/player'
+import { requireClubMember, requireClubAdmin } from '@/lib/auth-helpers'
 
-// GET /api/players - List all players
+// GET /api/players - List all players in current club
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await requireClubMember()
 
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const { searchParams } = new URL(req.url)
     const search = searchParams.get('search') || ''
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
 
     const players = await db.player.findMany({
       where: {
+        clubId,
         AND: [
           activeOnly ? { isActive: true } : {},
           search
@@ -50,14 +52,16 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/players - Create new player
+// POST /api/players - Create new player in current club
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await requireClubAdmin()
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const body = await req.json()
     const validatedData = createPlayerSchema.parse(body)
@@ -65,6 +69,7 @@ export async function POST(req: NextRequest) {
     // Convert empty strings to null for optional fields
     const playerData = {
       ...validatedData,
+      clubId,
       email: validatedData.email || null,
       phone: validatedData.phone || null,
       holdsportId: validatedData.holdsportId || null,
