@@ -13,6 +13,7 @@ import {
   LogOut
 } from 'lucide-react'
 import { signOut } from 'next-auth/react'
+import { ClubSelector } from './club-selector'
 
 const navItems = [
   {
@@ -73,6 +74,9 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
           </div>
         </div>
       </div>
+
+      {/* Club Selector */}
+      <ClubSelector onNavigate={onClose} />
 
       <nav className="flex-1 px-4">
         {navItems.map((item) => {
