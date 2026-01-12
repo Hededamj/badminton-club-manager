@@ -288,16 +288,9 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
 
       {/* Footer - Powered by CourtPlanner */}
       <div className="p-4 border-t">
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <Image
-            src="/logo.svg"
-            alt="CourtPlanner"
-            width={16}
-            height={16}
-            className="opacity-50"
-          />
-          <span>Powered by CourtPlanner</span>
-        </div>
+        <p className="text-xs text-muted-foreground text-center">
+          Powered by CourtPlanner
+        </p>
       </div>
     </div>
   )
