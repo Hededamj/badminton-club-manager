@@ -423,50 +423,45 @@ export default function TrainingDetailPage() {
   ) => {
     if (!selectedMatchPlayer || !training) return
 
-    try {
-      setSwapping(true)
-      setError('')
+    const previousTraining = training // Save for rollback
+    setError('')
 
-      // If swapping within the same match
-      if (selectedMatchPlayer.matchId === targetMatchId) {
-        const match = training.matches.find(m => m.id === targetMatchId)
-        if (!match) return
+    // If swapping within the same match
+    if (selectedMatchPlayer.matchId === targetMatchId) {
+      const match = training.matches.find(m => m.id === targetMatchId)
+      if (!match) return
 
-        const updatedPlayers = match.matchPlayers.map(mp => {
-          // Move selected player to target position
-          if (mp.player.id === selectedMatchPlayer.playerId) {
-            return {
-              playerId: mp.player.id,
-              team: targetTeam,
-              position: targetPosition,
-            }
-          }
-          // Move target player to selected player's position (if position is occupied)
-          if (targetPlayerId && mp.player.id === targetPlayerId) {
-            return {
-              playerId: mp.player.id,
-              team: selectedMatchPlayer.team,
-              position: selectedMatchPlayer.position,
-            }
-          }
-          return {
-            playerId: mp.player.id,
-            team: mp.team,
-            position: mp.position,
-          }
-        })
-
-        // If target position was empty, just move the player
-        if (!targetPlayerId) {
-          const playerInNewPosition = updatedPlayers.find(
-            p => p.playerId === selectedMatchPlayer.playerId
-          )
-          if (playerInNewPosition) {
-            playerInNewPosition.team = targetTeam
-            playerInNewPosition.position = targetPosition
-          }
+      // Build optimistic update for UI
+      const optimisticMatchPlayers = match.matchPlayers.map(mp => {
+        if (mp.player.id === selectedMatchPlayer.playerId) {
+          return { ...mp, team: targetTeam, position: targetPosition }
         }
+        if (targetPlayerId && mp.player.id === targetPlayerId) {
+          return { ...mp, team: selectedMatchPlayer.team, position: selectedMatchPlayer.position }
+        }
+        return mp
+      })
 
+      // Optimistic UI update BEFORE API call
+      setTraining(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          matches: prev.matches.map(m =>
+            m.id === targetMatchId ? { ...m, matchPlayers: optimisticMatchPlayers } : m
+          )
+        }
+      })
+      setSelectedMatchPlayer(null)
+
+      // API call in background
+      const updatedPlayers = optimisticMatchPlayers.map(mp => ({
+        playerId: mp.player.id,
+        team: mp.team,
+        position: mp.position,
+      }))
+
+      try {
         const res = await fetch(`/api/trainings/${training.id}/matches/${targetMatchId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -474,21 +469,14 @@ export default function TrainingDetailPage() {
         })
 
         if (!res.ok) {
-          const errorData = await res.json()
-          throw new Error(errorData.error || 'Kunne ikke bytte spillere')
+          throw new Error('Kunne ikke bytte spillere')
         }
-
-        const data = await res.json()
-        setTraining(prev => {
-          if (!prev) return prev
-          return {
-            ...prev,
-            matches: prev.matches.map(m =>
-              m.id === targetMatchId ? data.match : m
-            )
-          }
-        })
-      } else {
+      } catch (err) {
+        // Rollback on error
+        setTraining(previousTraining)
+        setError('Kunne ikke gemme ændringen')
+      }
+    } else {
         // Swapping between different matches - need to update both matches
         const sourceMatch = training.matches.find(m => m.id === selectedMatchPlayer.matchId)
         const targetMatch = training.matches.find(m => m.id === targetMatchId)
@@ -614,72 +602,70 @@ export default function TrainingDetailPage() {
   ) => {
     if (!training || !selectedBenchPlayer) return
 
-    try {
-      setSwapping(true)
-      setError('')
+    const previousTraining = training // Save for rollback
+    setError('')
 
-      const match = training.matches.find(m => m.id === matchId)
-      if (!match) return
+    const match = training.matches.find(m => m.id === matchId)
+    if (!match) return
 
-      // Get existing players
-      const existingPlayers = match.matchPlayers.map(mp => ({
-        playerId: mp.player.id,
-        team: mp.team,
-        position: mp.position,
-      }))
+    // Find the player being added from training players
+    const playerToAdd = training.trainingPlayers.find(tp => tp.player.id === selectedBenchPlayer)?.player
+    if (!playerToAdd) return
 
-      // Check if position is occupied
-      const occupiedPlayerIndex = existingPlayers.findIndex(
-        p => p.team === team && p.position === position
-      )
+    // Build optimistic match players
+    let optimisticMatchPlayers = [...match.matchPlayers]
+    const occupiedIndex = optimisticMatchPlayers.findIndex(
+      mp => mp.team === team && mp.position === position
+    )
 
-      if (occupiedPlayerIndex >= 0) {
-        // Replace the player at this position
-        existingPlayers[occupiedPlayerIndex] = {
-          playerId: selectedBenchPlayer,
-          team,
-          position,
-        }
-      } else {
-        // Add new player
-        existingPlayers.push({
-          playerId: selectedBenchPlayer,
-          team,
-          position,
-        })
+    if (occupiedIndex >= 0) {
+      // Replace player at position
+      optimisticMatchPlayers[occupiedIndex] = {
+        ...optimisticMatchPlayers[occupiedIndex],
+        player: playerToAdd
       }
+    } else {
+      // Add new player
+      optimisticMatchPlayers.push({
+        player: playerToAdd,
+        team,
+        position,
+      })
+    }
 
+    // Optimistic UI update BEFORE API call
+    setTraining(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        matches: prev.matches.map(m =>
+          m.id === matchId ? { ...m, matchPlayers: optimisticMatchPlayers } : m
+        )
+      }
+    })
+    setSelectedBenchPlayer(null)
+
+    // API call in background
+    const playersForApi = optimisticMatchPlayers.map(mp => ({
+      playerId: mp.player.id,
+      team: mp.team,
+      position: mp.position,
+    }))
+
+    try {
       const res = await fetch(`/api/trainings/${training.id}/matches/${matchId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ players: existingPlayers }),
+        body: JSON.stringify({ players: playersForApi }),
       })
 
       if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || 'Kunne ikke tilføje spiller')
+        throw new Error('Kunne ikke tilføje spiller')
       }
-
-      const data = await res.json()
-
-      // Optimistic update: only update the specific match instead of refetching everything
-      setTraining(prev => {
-        if (!prev) return prev
-        return {
-          ...prev,
-          matches: prev.matches.map(m =>
-            m.id === matchId ? data.match : m
-          )
-        }
-      })
-
-      setSelectedBenchPlayer(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Der opstod en fejl')
-      // On error, refetch to ensure consistency
-      fetchTraining()
-    } finally {
-      setSwapping(false)
+      // Rollback on error
+      setTraining(previousTraining)
+      setError('Kunne ikke gemme ændringen')
     }
   }
 
