@@ -61,11 +61,10 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
       <div className="p-6">
         <div className="flex items-center gap-3">
           <Image
-            src="/logo.png"
+            src="/logo.svg"
             alt="CourtPlanner"
             width={50}
             height={50}
-            className="rounded-lg"
           />
           <div>
             <h1 className="text-xl font-bold text-[#005A9C]">

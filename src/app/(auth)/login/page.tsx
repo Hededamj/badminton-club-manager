@@ -52,11 +52,10 @@ function LoginForm() {
         <CardHeader className="space-y-4">
           <div className="flex flex-col items-center gap-4">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="CourtPlanner"
               width={100}
               height={100}
-              className="rounded-lg"
             />
             <div className="text-center">
               <CardTitle className="text-3xl font-bold text-[#005A9C]">

@@ -111,11 +111,11 @@ export default function OnboardingPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <Image
-            src="/logo.png"
+            src="/logo.svg"
             alt="CourtPlanner"
             width={80}
             height={80}
-            className="mx-auto mb-4 rounded-lg"
+            className="mx-auto mb-4"
           />
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">
             Velkommen til CourtPlanner!

@@ -89,11 +89,10 @@ function RegisterForm() {
         <CardHeader className="space-y-4">
           <div className="flex flex-col items-center gap-4">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="CourtPlanner"
               width={80}
               height={80}
-              className="rounded-lg"
             />
             <div className="text-center">
               <CardTitle className="text-2xl font-bold text-[#005A9C]">

@@ -22,11 +22,10 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
 
       <div className="flex items-center gap-2">
         <Image
-          src="/logo.png"
-          alt="Hareskov Badminton"
+          src="/logo.svg"
+          alt="CourtPlanner"
           width={32}
           height={32}
-          className="rounded-lg"
         />
         <div>
           <h1 className="text-sm font-bold text-[#005A9C]">HARESKOV</h1>

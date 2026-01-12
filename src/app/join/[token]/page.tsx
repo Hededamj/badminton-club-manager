@@ -140,11 +140,11 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
           {/* Header */}
           <div className="bg-primary/5 px-8 py-6 text-center border-b">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="CourtPlanner"
               width={60}
               height={60}
-              className="mx-auto mb-4 rounded-lg"
+              className="mx-auto mb-4"
             />
             <h1 className="text-xl font-bold">Du er inviteret!</h1>
           </div>
@@ -204,11 +204,11 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
           {/* Header */}
           <div className="bg-primary/5 px-8 py-6 text-center border-b">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="CourtPlanner"
               width={60}
               height={60}
-              className="mx-auto mb-4 rounded-lg"
+              className="mx-auto mb-4"
             />
             <h1 className="text-xl font-bold">Bliv medlem af klubben</h1>
           </div>
