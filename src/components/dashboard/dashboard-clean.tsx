@@ -64,7 +64,7 @@ export function DashboardClean({ stats }: DashboardCleanProps) {
   ]
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6 overflow-hidden">
       {/* Header - Compact on mobile */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-[#005A9C]">Dashboard</h1>
@@ -171,7 +171,7 @@ export function DashboardClean({ stats }: DashboardCleanProps) {
       )}
 
       {/* Quick Actions - Stack on mobile, grid on desktop */}
-      <div className="grid grid-cols-1 gap-2 md:gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 md:gap-4 md:grid-cols-3 max-w-full">
         <Button
           onClick={() => router.push('/trainings/new')}
           variant="outline"
