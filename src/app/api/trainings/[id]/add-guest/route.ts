@@ -52,11 +52,11 @@ export async function POST(
 
     // Create guest player and add to training in a transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Create the player
+      // Create the player with unique email (timestamp + random to avoid collisions)
       const player = await tx.player.create({
         data: {
           name: name.trim(),
-          email: `guest_${Date.now()}@temporary.local`, // Temporary email
+          email: `guest_${Date.now()}_${Math.random().toString(36).substring(7)}@temporary.local`, // Unique temporary email
           level: level,
           gender: gender || null,
           isActive: true,
