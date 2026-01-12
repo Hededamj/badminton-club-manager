@@ -83,10 +83,10 @@ export function TrainingCourtViewRedesign({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="snap-y snap-mandatory overflow-y-auto">
 
       {/* Rounds */}
-      <div className="space-y-12">
+      <div className="space-y-0">
         {rounds.map((roundMatches, roundIndex) => {
           if (roundMatches.length === 0) return null
 
@@ -94,9 +94,9 @@ export function TrainingCourtViewRedesign({
           const benchPlayers = getBenchPlayers(roundNumber)
 
           return (
-            <div key={roundIndex} className="space-y-6">
+            <div key={roundIndex} className="snap-start min-h-[80vh] py-6 border-b-4 border-slate-200 last:border-b-0 bg-gradient-to-b from-slate-50 to-white space-y-6">
               {/* Round Header */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 sticky top-0 bg-gradient-to-b from-slate-50 via-slate-50 to-transparent pb-4 z-10">
                 <div className="flex items-baseline gap-3">
                   <div className="text-6xl font-black text-slate-200 leading-none select-none">
                     {roundNumber}
