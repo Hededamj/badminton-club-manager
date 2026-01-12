@@ -903,10 +903,24 @@ export default function TrainingDetailPage() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Tilmeldte spillere</CardTitle>
-              <CardDescription>
-                {training.trainingPlayers.length} spillere deltager i træningen
-              </CardDescription>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle>Tilmeldte spillere</CardTitle>
+                  <CardDescription>
+                    {training.trainingPlayers.length} spillere deltager i træningen
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => setShowAddGuestDialog(true)}
+                  size="sm"
+                  variant="outline"
+                  className="flex-shrink-0"
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Tilføj Gæst</span>
+                  <span className="sm:hidden">Gæst</span>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
