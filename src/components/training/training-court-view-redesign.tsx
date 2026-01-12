@@ -133,7 +133,7 @@ export function TrainingCourtViewRedesign({
                       <Button
                         onClick={onMoveToBench}
                         size="lg"
-                        className="bg-[#005A9C] hover:bg-[#004A7C] text-white font-bold shadow-lg"
+                        className="bg-[#005A9C] hover:bg-[#004A7C] active:bg-[#003A6C] text-white font-bold shadow-lg touch-manipulation"
                       >
                         <span className="hidden sm:inline">Sæt på bænk</span>
                         <span className="sm:hidden">Bænk</span>
@@ -147,10 +147,10 @@ export function TrainingCourtViewRedesign({
                           key={player.id}
                           onClick={() => onSelectBenchPlayer(player.id)}
                           className={`
-                            px-3 md:px-4 py-3 rounded-lg font-medium text-sm transition-all min-h-[48px]
+                            px-3 md:px-4 py-3 rounded-lg font-medium text-sm transition-all min-h-[48px] touch-manipulation
                             ${selectedBenchPlayer === player.id
                               ? 'bg-[#005A9C] text-white shadow-lg scale-105'
-                              : 'bg-card border hover:bg-muted'
+                              : 'bg-card border hover:bg-muted active:bg-muted'
                             }
                           `}
                         >
@@ -226,14 +226,14 @@ export function TrainingCourtViewRedesign({
                                     onClickPlayerPosition(match.id, 1, position, mp?.player.id)
                                   }
                                 }}
-                                className={`flex items-center justify-between p-2 rounded transition-all min-h-[44px] ${
+                                className={`flex items-center justify-between p-2 rounded transition-all min-h-[44px] touch-manipulation ${
                                   trainingStatus === 'IN_PROGRESS' && !isCompleted
                                     ? isSelected
                                       ? 'cursor-pointer bg-blue-200 border-2 border-blue-500 shadow-md'
                                       : mp
-                                      ? 'cursor-pointer hover:bg-blue-50 border-2 border-transparent hover:border-blue-300'
+                                      ? 'cursor-pointer hover:bg-blue-50 active:bg-blue-100 border-2 border-transparent hover:border-blue-300'
                                       : selectedBenchPlayer || selectedMatchPlayer
-                                      ? 'cursor-pointer hover:bg-green-100 border-2 border-dashed border-gray-300'
+                                      ? 'cursor-pointer hover:bg-green-100 active:bg-green-200 border-2 border-dashed border-gray-300'
                                       : 'border-2 border-transparent'
                                     : 'border-2 border-transparent'
                                 }`}
@@ -279,14 +279,14 @@ export function TrainingCourtViewRedesign({
                                     onClickPlayerPosition(match.id, 2, position, mp?.player.id)
                                   }
                                 }}
-                                className={`flex items-center justify-between p-2 rounded transition-all min-h-[44px] ${
+                                className={`flex items-center justify-between p-2 rounded transition-all min-h-[44px] touch-manipulation ${
                                   trainingStatus === 'IN_PROGRESS' && !isCompleted
                                     ? isSelected
                                       ? 'cursor-pointer bg-red-200 border-2 border-red-500 shadow-md'
                                       : mp
-                                      ? 'cursor-pointer hover:bg-red-50 border-2 border-transparent hover:border-red-300'
+                                      ? 'cursor-pointer hover:bg-red-50 active:bg-red-100 border-2 border-transparent hover:border-red-300'
                                       : selectedBenchPlayer || selectedMatchPlayer
-                                      ? 'cursor-pointer hover:bg-green-100 border-2 border-dashed border-gray-300'
+                                      ? 'cursor-pointer hover:bg-green-100 active:bg-green-200 border-2 border-dashed border-gray-300'
                                       : 'border-2 border-transparent'
                                     : 'border-2 border-transparent'
                                 }`}
@@ -324,7 +324,7 @@ export function TrainingCourtViewRedesign({
                           <div className="flex flex-col gap-2">
                             <Button
                               size="lg"
-                              className="w-full bg-slate-900 hover:bg-slate-800 font-semibold text-base py-6"
+                              className="w-full bg-slate-900 hover:bg-slate-800 active:bg-slate-700 font-semibold text-base py-6 touch-manipulation"
                               onClick={() => onMatchClick(match)}
                             >
                               Resultat
