@@ -134,11 +134,11 @@ export default function OnboardingPage() {
 
             <button
               onClick={() => setMode('create')}
-              className="w-full bg-card border rounded-xl p-6 hover:border-primary hover:shadow-md transition-all text-left group"
+              className="w-full bg-card border rounded-xl p-6 hover:border-[#005A9C] hover:shadow-md transition-all text-left group"
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <Building2 className="w-6 h-6 text-primary" />
+                <div className="w-12 h-12 rounded-lg bg-[#005A9C]/10 flex items-center justify-center group-hover:bg-[#005A9C]/20 transition-colors">
+                  <Building2 className="w-6 h-6 text-[#005A9C]" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-1">Opret en ny klub</h3>
@@ -146,17 +146,17 @@ export default function OnboardingPage() {
                     Start din egen badmintonklub og inviter medlemmer
                   </p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-[#005A9C] transition-colors" />
               </div>
             </button>
 
             <button
               onClick={() => setMode('join')}
-              className="w-full bg-card border rounded-xl p-6 hover:border-primary hover:shadow-md transition-all text-left group"
+              className="w-full bg-card border rounded-xl p-6 hover:border-[#005A9C] hover:shadow-md transition-all text-left group"
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <UserPlus className="w-6 h-6 text-primary" />
+                <div className="w-12 h-12 rounded-lg bg-[#005A9C]/10 flex items-center justify-center group-hover:bg-[#005A9C]/20 transition-colors">
+                  <UserPlus className="w-6 h-6 text-[#005A9C]" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-1">Jeg har en invitationskode</h3>
@@ -164,14 +164,14 @@ export default function OnboardingPage() {
                     Brug et invitationslink eller kode for at blive medlem
                   </p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-[#005A9C] transition-colors" />
               </div>
             </button>
 
             <div className="text-center pt-4">
               <p className="text-sm text-muted-foreground">
                 Har du modtaget en invitation via email?{' '}
-                <span className="text-primary">Klik på linket i emailen</span>
+                <span className="text-[#005A9C]">Klik på linket i emailen</span>
               </p>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default function OnboardingPage() {
               <button
                 type="submit"
                 disabled={isSubmitting || clubName.length < 2}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#005A9C] text-white rounded-lg hover:bg-[#004A7C] disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -293,7 +293,7 @@ export default function OnboardingPage() {
               <button
                 type="submit"
                 disabled={!inviteCode.trim()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#005A9C] text-white rounded-lg hover:bg-[#004A7C] disabled:opacity-50"
               >
                 <UserPlus className="w-4 h-4" />
                 Fortsæt

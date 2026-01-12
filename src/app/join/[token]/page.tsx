@@ -124,7 +124,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
           <p className="text-muted-foreground mb-6">{error}</p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#005A9C] text-white rounded-lg hover:bg-[#004A7C]"
           >
             Gå til login
           </Link>
@@ -139,7 +139,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30 p-4">
         <div className="max-w-md w-full bg-card border rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="bg-primary/5 px-8 py-6 text-center border-b">
+          <div className="bg-[#005A9C]/5 px-8 py-6 text-center border-b">
             <Image
               src="/logo.svg"
               alt="CourtPlanner"
@@ -153,8 +153,8 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
           {/* Content */}
           <div className="p-8">
             <div className="flex items-center gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 rounded-lg bg-[#005A9C]/10 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-[#005A9C]" />
               </div>
               <div>
                 <p className="font-semibold">{invitation.club.name}</p>
@@ -175,7 +175,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
             <div className="space-y-3">
               <button
                 onClick={() => signIn(undefined, { callbackUrl: `/join/${token}` })}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#005A9C] text-white rounded-lg hover:bg-[#004A7C]"
               >
                 <LogIn className="w-4 h-4" />
                 Log ind
@@ -203,7 +203,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30 p-4">
         <div className="max-w-md w-full bg-card border rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="bg-primary/5 px-8 py-6 text-center border-b">
+          <div className="bg-[#005A9C]/5 px-8 py-6 text-center border-b">
             <Image
               src="/logo.svg"
               alt="CourtPlanner"
@@ -217,8 +217,8 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
           {/* Content */}
           <div className="p-8">
             <div className="flex items-center gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 rounded-lg bg-[#005A9C]/10 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-[#005A9C]" />
               </div>
               <div>
                 <p className="font-semibold">{invitation.club.name}</p>
@@ -266,7 +266,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
               <button
                 onClick={handleAccept}
                 disabled={isAccepting || emailMismatch}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#005A9C] text-white rounded-lg hover:bg-[#004A7C] disabled:opacity-50"
               >
                 {isAccepting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

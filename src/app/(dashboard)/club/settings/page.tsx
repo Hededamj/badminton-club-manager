@@ -201,7 +201,7 @@ export default function ClubSettingsPage() {
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold flex items-center gap-3">
-          <Building2 className="w-7 h-7 text-primary" />
+          <Building2 className="w-7 h-7 text-[#005A9C]" />
           Klubindstillinger
         </h1>
         <p className="text-muted-foreground mt-1">
@@ -275,7 +275,7 @@ export default function ClubSettingsPage() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingLogo}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#005A9C] text-white rounded-lg hover:bg-[#004A7C] disabled:opacity-50"
                 >
                   {isUploadingLogo ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -370,7 +370,7 @@ export default function ClubSettingsPage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-[#005A9C] text-white rounded-lg hover:bg-[#004A7C] disabled:opacity-50"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

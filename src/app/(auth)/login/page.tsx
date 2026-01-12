@@ -107,7 +107,7 @@ function LoginForm() {
             <span className="text-muted-foreground">Har du ikke en konto? </span>
             <Link
               href={redirectUrl !== '/dashboard' ? `/register?redirect=${encodeURIComponent(redirectUrl)}` : '/register'}
-              className="text-primary hover:underline font-medium"
+              className="text-[#005A9C] hover:underline font-medium"
             >
               Opret konto
             </Link>

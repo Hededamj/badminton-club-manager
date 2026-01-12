@@ -258,7 +258,7 @@ export default function TournamentDetailPage() {
 
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <Trophy className="h-10 w-10 text-primary" />
+            <Trophy className="h-10 w-10 text-[#005A9C]" />
             <div>
               <h1 className="text-4xl font-bold tracking-tight">
                 {tournament.name}

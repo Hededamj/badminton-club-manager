@@ -164,7 +164,7 @@ function RegisterForm() {
             <span className="text-muted-foreground">Har du allerede en konto? </span>
             <Link
               href={redirectUrl !== '/onboarding' ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : '/login'}
-              className="text-primary hover:underline font-medium"
+              className="text-[#005A9C] hover:underline font-medium"
             >
               Log ind
             </Link>

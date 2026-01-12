@@ -173,7 +173,7 @@ export default function ClubMembersPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-3">
-            <Users className="w-7 h-7 text-primary" />
+            <Users className="w-7 h-7 text-[#005A9C]" />
             Medlemmer
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -184,7 +184,7 @@ export default function ClubMembersPage() {
         {isAdmin && (
           <Link
             href="/club/invite"
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+            className="flex items-center gap-2 px-4 py-2 bg-[#005A9C] text-white rounded-lg hover:bg-[#004A7C]"
           >
             <UserPlus className="w-4 h-4" />
             <span className="hidden sm:inline">Inviter medlem</span>
@@ -306,7 +306,7 @@ export default function ClubMembersPage() {
                     {member.player ? (
                       <Link
                         href={`/players/${member.player.id}`}
-                        className="text-sm text-primary hover:underline"
+                        className="text-sm text-[#005A9C] hover:underline"
                       >
                         {member.player.name}
                       </Link>

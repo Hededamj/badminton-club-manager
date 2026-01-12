@@ -19,8 +19,8 @@ export function DesktopHeader() {
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
         >
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-medium text-primary">{userInitial}</span>
+          <div className="w-8 h-8 rounded-full bg-[#005A9C]/10 flex items-center justify-center">
+            <span className="text-sm font-medium text-[#005A9C]">{userInitial}</span>
           </div>
           <span className="text-sm font-medium max-w-[150px] truncate">
             {session?.user?.email}
