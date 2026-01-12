@@ -166,7 +166,7 @@ export function TrainingCourtViewRedesign({
               )}
 
               {/* Match Grid - Horizontal scroll */}
-              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory px-4 md:px-6">
+              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory pl-4 pr-4 md:pl-6 md:pr-6">
                 {roundMatches.map(match => {
                   const team1 = match.matchPlayers.filter(mp => mp.team === 1)
                   const team2 = match.matchPlayers.filter(mp => mp.team === 2)
