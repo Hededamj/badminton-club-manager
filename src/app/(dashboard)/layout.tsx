@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { MobileHeader } from '@/components/dashboard/mobile-header'
+import { DesktopHeader } from '@/components/dashboard/desktop-header'
 
 export default function DashboardLayout({
   children,
@@ -34,10 +35,16 @@ export default function DashboardLayout({
         </>
       )}
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6 lg:p-8 pt-16 lg:pt-8">
-        {children}
-      </main>
+      {/* Main content area with header */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Desktop header with user profile on right */}
+        <DesktopHeader />
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6 lg:p-8 pt-16 lg:pt-6">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
