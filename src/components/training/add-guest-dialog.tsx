@@ -118,12 +118,12 @@ export function AddGuestDialog({
 
             <div className="space-y-2">
               <Label htmlFor="gender">Køn (valgfrit)</Label>
-              <Select value={gender} onValueChange={(value) => setGender(value as 'MALE' | 'FEMALE' | '')}>
+              <Select value={gender || 'NONE'} onValueChange={(value) => setGender(value === 'NONE' ? '' : value as 'MALE' | 'FEMALE')}>
                 <SelectTrigger id="gender">
                   <SelectValue placeholder="Vælg køn (valgfrit)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Ikke angivet</SelectItem>
+                  <SelectItem value="NONE">Ikke angivet</SelectItem>
                   <SelectItem value="MALE">Mand</SelectItem>
                   <SelectItem value="FEMALE">Kvinde</SelectItem>
                 </SelectContent>
