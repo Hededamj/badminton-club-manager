@@ -1024,43 +1024,6 @@ export default function TrainingDetailPage() {
 
       {training.matches.length > 0 && (
         <>
-          {/* Bench Section - Show during IN_PROGRESS (only in list view, graphic view has its own) */}
-          {getTrainingStatus() === 'IN_PROGRESS' && getBenchPlayers().length > 0 && viewMode !== 'graphic' && (
-            <Card className="bg-orange-50 border-orange-200">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Bænk - Tilgængelige spillere
-                </CardTitle>
-                <CardDescription>
-                  {selectedBenchPlayer
-                    ? 'Klik på en position i en kamp for at sætte spilleren ind'
-                    : 'Klik på en spiller for at vælge dem, derefter klik på position i en kamp'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {getBenchPlayers().map(player => (
-                    <Button
-                      key={player.id}
-                      variant={selectedBenchPlayer === player.id ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleSelectBenchPlayer(player.id)}
-                      disabled={swapping}
-                      className={`${
-                        selectedBenchPlayer === player.id
-                          ? 'bg-blue-600 hover:bg-blue-700'
-                          : 'bg-white hover:bg-orange-100'
-                      }`}
-                    >
-                      {player.name} ({Math.round(player.level)})
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1131,16 +1094,45 @@ export default function TrainingDetailPage() {
                       self.findIndex(p => p.id === player.id) === index
                     )
 
+                  const availableBenchPlayers = getBenchPlayers(matchIndex + 1)
+
                   return (
                     <div key={matchIndex + 1} className="space-y-3">
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-lg">Kamp {matchIndex + 1}</h3>
-                        {benchedPlayersForRound.length > 0 && (
+                        {availableBenchPlayers.length > 0 && (
                           <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                            {benchedPlayersForRound.length} sidder over
+                            {availableBenchPlayers.length} på bænken
                           </Badge>
                         )}
                       </div>
+
+                      {/* Bench section for this round in list view */}
+                      {getTrainingStatus() === 'IN_PROGRESS' && availableBenchPlayers.length > 0 && (
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                          <p className="text-sm font-medium text-orange-900 mb-2">
+                            Spillere på bænken - Klik for at vælge:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {availableBenchPlayers.map(player => (
+                              <Button
+                                key={player.id}
+                                variant={selectedBenchPlayer === player.id ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => handleSelectBenchPlayer(player.id)}
+                                disabled={swapping}
+                                className={`touch-manipulation ${
+                                  selectedBenchPlayer === player.id
+                                    ? 'bg-blue-600 hover:bg-blue-700'
+                                    : 'bg-white hover:bg-orange-100'
+                                }`}
+                              >
+                                {player.name} ({Math.round(player.level)})
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {roundMatches.map(match => {
