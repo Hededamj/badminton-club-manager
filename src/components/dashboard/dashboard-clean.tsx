@@ -170,12 +170,12 @@ export function DashboardClean({ stats }: DashboardCleanProps) {
         </div>
       )}
 
-      {/* Quick Actions - Horizontal scroll on mobile */}
-      <div className="flex gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 md:grid md:grid-cols-3">
+      {/* Quick Actions - Stack on mobile, grid on desktop */}
+      <div className="grid grid-cols-1 gap-2 md:gap-4 md:grid-cols-3">
         <Button
           onClick={() => router.push('/trainings/new')}
           variant="outline"
-          className="h-auto p-3 md:p-6 justify-start flex-shrink-0 min-w-[140px] md:min-w-0 touch-manipulation"
+          className="h-auto p-3 md:p-6 justify-start w-full touch-manipulation"
         >
           <div className="text-left">
             <div className="font-semibold text-sm md:text-base">Opret Træning</div>
@@ -186,7 +186,7 @@ export function DashboardClean({ stats }: DashboardCleanProps) {
         <Button
           onClick={() => router.push('/players')}
           variant="outline"
-          className="h-auto p-3 md:p-6 justify-start flex-shrink-0 min-w-[140px] md:min-w-0 touch-manipulation"
+          className="h-auto p-3 md:p-6 justify-start w-full touch-manipulation"
         >
           <div className="text-left">
             <div className="font-semibold text-sm md:text-base">Spillere</div>
@@ -197,7 +197,7 @@ export function DashboardClean({ stats }: DashboardCleanProps) {
         <Button
           onClick={() => router.push('/statistics')}
           variant="outline"
-          className="h-auto p-3 md:p-6 justify-start flex-shrink-0 min-w-[140px] md:min-w-0 touch-manipulation"
+          className="h-auto p-3 md:p-6 justify-start w-full touch-manipulation"
         >
           <div className="text-left">
             <div className="font-semibold text-sm md:text-base">Statistik</div>
