@@ -83,10 +83,9 @@ export function TrainingCourtViewRedesign({
   }
 
   return (
-    <div className="snap-y snap-mandatory overflow-y-auto">
-
+    <div>
       {/* Rounds */}
-      <div className="space-y-0">
+      <div className="space-y-8">
         {rounds.map((roundMatches, roundIndex) => {
           if (roundMatches.length === 0) return null
 
@@ -94,9 +93,9 @@ export function TrainingCourtViewRedesign({
           const benchPlayers = getBenchPlayers(roundNumber)
 
           return (
-            <div key={roundIndex} className="snap-start min-h-[80vh] py-6 border-b-4 border-slate-200 last:border-b-0 bg-gradient-to-b from-slate-50 to-white space-y-6">
+            <div key={roundIndex} className="py-6 rounded-2xl bg-gradient-to-b from-slate-100 to-slate-50 border-2 border-slate-200 space-y-6">
               {/* Round Header */}
-              <div className="flex items-center gap-4 sticky top-0 bg-gradient-to-b from-slate-50 via-slate-50 to-transparent pb-4 z-10">
+              <div className="flex items-center gap-4 px-4 md:px-6">
                 <div className="flex items-baseline gap-3">
                   <div className="text-6xl font-black text-slate-200 leading-none select-none">
                     {roundNumber}
@@ -115,7 +114,7 @@ export function TrainingCourtViewRedesign({
 
               {/* Bench Section for this round */}
               {trainingStatus === 'IN_PROGRESS' && (benchPlayers.length > 0 || selectedMatchPlayer) && (
-                <div className="bg-card border rounded-lg p-4 md:p-6 shadow-lg">
+                <div className="bg-card border rounded-lg p-4 md:p-6 shadow-lg mx-4 md:mx-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-lg md:text-xl font-bold text-[#005A9C]">
@@ -167,7 +166,7 @@ export function TrainingCourtViewRedesign({
               )}
 
               {/* Match Grid - Horizontal scroll */}
-              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
+              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory px-4 md:px-6">
                 {roundMatches.map(match => {
                   const team1 = match.matchPlayers.filter(mp => mp.team === 1)
                   const team2 = match.matchPlayers.filter(mp => mp.team === 2)
