@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Upload, ChevronRight, Pencil, Trash2, User, LayoutGrid, List } from 'lucide-react'
+import { Plus, Search, Download, ChevronRight, Pencil, Trash2, User, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
@@ -70,7 +70,7 @@ export function PlayersListClean({
             size="sm"
             className="sm:size-default"
           >
-            <Upload className="h-4 w-4 sm:mr-2" />
+            <Download className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Importer</span>
           </Button>
           <Button
