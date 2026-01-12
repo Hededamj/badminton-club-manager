@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Building2, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 export default function NewClubPage() {
-  const router = useRouter()
+  const { update: updateSession } = useSession()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -32,9 +32,10 @@ export default function NewClubPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ clubId: club.id }),
         })
-        // Redirect to dashboard
-        router.push('/dashboard')
-        router.refresh()
+        // Update session with new club
+        await updateSession({ clubId: club.id })
+        // Force full page navigation to ensure session is refreshed
+        window.location.href = '/dashboard'
       } else {
         const data = await response.json()
         setError(data.error || 'Kunne ikke oprette klub')

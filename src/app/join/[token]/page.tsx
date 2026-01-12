@@ -21,7 +21,7 @@ interface InvitationData {
 
 export default function JoinPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params)
-  const { data: session, status } = useSession()
+  const { data: session, status, update: updateSession } = useSession()
   const router = useRouter()
   const [invitation, setInvitation] = useState<InvitationData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -65,11 +65,13 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
       const data = await response.json()
 
       if (response.ok) {
+        const data_result = await response.json()
         setSuccess(true)
+        // Update session with new club
+        await updateSession({ clubId: data_result.club.id })
         // Redirect to dashboard after 2 seconds
         setTimeout(() => {
-          router.push('/dashboard')
-          router.refresh()
+          window.location.href = '/dashboard'
         }, 2000)
       } else {
         setError(data.error || 'Kunne ikke acceptere invitation')

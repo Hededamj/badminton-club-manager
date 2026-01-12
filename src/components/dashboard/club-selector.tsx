@@ -60,8 +60,8 @@ export function ClubSelector({ onNavigate }: ClubSelectorProps) {
         // Trigger session update with new club
         await updateSession({ clubId })
         setIsOpen(false)
-        // Refresh the page to load new club data
-        router.refresh()
+        // Force full page reload to ensure all data is refreshed
+        window.location.reload()
       }
     } catch (error) {
       console.error('Error switching club:', error)

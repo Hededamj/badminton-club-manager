@@ -67,8 +67,8 @@ export default function OnboardingPage() {
         })
         // Update session
         await updateSession({ clubId: data.id })
-        router.push('/dashboard')
-        router.refresh()
+        // Force full page navigation to ensure session is refreshed
+        window.location.href = '/dashboard'
       } else {
         setError(data.error || 'Kunne ikke oprette klub')
       }
