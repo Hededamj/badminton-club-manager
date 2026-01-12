@@ -160,7 +160,8 @@ export default function ClubSettingsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setClub(data)
+        // Merge updated data with existing club (keep _count)
+        setClub(prev => prev ? { ...prev, ...data } : data)
         setSuccess('Kluboplysninger opdateret')
         // Refresh session to get new club name
         router.refresh()
