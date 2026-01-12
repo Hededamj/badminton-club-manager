@@ -176,7 +176,7 @@ export function TrainingCourtViewRedesign({
                   return (
                     <div
                       key={match.id}
-                      className="group relative bg-white rounded-xl border-2 border-slate-200 overflow-hidden hover:border-slate-300 transition-all hover:shadow-lg flex-shrink-0 w-[280px] md:w-[220px] snap-start"
+                      className="group relative bg-white rounded-xl border-2 border-slate-200 overflow-hidden hover:border-slate-300 transition-all hover:shadow-lg flex-shrink-0 w-[300px] md:w-[240px] snap-start"
                     >
                       {/* Match Type Color Bar */}
                       <div
@@ -185,7 +185,7 @@ export function TrainingCourtViewRedesign({
                       />
 
                       {/* Court Number Header */}
-                      <div className="px-4 pt-3 pb-2 bg-slate-50 border-b border-slate-100">
+                      <div className="px-5 pt-4 pb-3 bg-slate-50 border-b border-slate-100">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-slate-400">
@@ -207,7 +207,7 @@ export function TrainingCourtViewRedesign({
                       </div>
 
                       {/* Match Content */}
-                      <div className="p-4 space-y-3">
+                      <div className="p-5 space-y-3">
                         {/* Team 1 (Blue) */}
                         <div className="space-y-1.5">
                           <div className="text-xs font-bold text-blue-600 uppercase tracking-wide">
@@ -309,7 +309,7 @@ export function TrainingCourtViewRedesign({
                       </div>
 
                       {/* Result or Actions */}
-                      <div className="px-4 pb-4">
+                      <div className="px-5 pb-5">
                         {isCompleted ? (
                           <div className="bg-slate-100 rounded-lg p-3 text-center">
                             <div className="text-2xl font-black text-slate-900">
