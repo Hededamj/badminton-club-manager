@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { ChevronDown, Building2, Check, Plus, Settings, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface Club {
   id: string
@@ -93,8 +94,12 @@ export function ClubSelector({ onNavigate }: ClubSelectorProps) {
             "border border-border/50"
           )}
         >
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Building2 className="w-4 h-4 text-primary" />
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+            {currentClub?.logo ? (
+              <Image src={currentClub.logo} alt="" width={32} height={32} className="w-full h-full object-cover" />
+            ) : (
+              <Building2 className="w-4 h-4 text-primary" />
+            )}
           </div>
           <div className="flex-1 text-left min-w-0">
             <p className="text-sm font-medium truncate">
@@ -140,8 +145,12 @@ export function ClubSelector({ onNavigate }: ClubSelectorProps) {
                         club.id === session?.user?.currentClubId && "bg-accent"
                       )}
                     >
-                      <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center">
-                        <Building2 className="w-3 h-3 text-primary" />
+                      <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center overflow-hidden">
+                        {club.logo ? (
+                          <Image src={club.logo} alt="" width={24} height={24} className="w-full h-full object-cover" />
+                        ) : (
+                          <Building2 className="w-3 h-3 text-primary" />
+                        )}
                       </div>
                       <span className="flex-1 text-left text-sm truncate">
                         {club.name}
