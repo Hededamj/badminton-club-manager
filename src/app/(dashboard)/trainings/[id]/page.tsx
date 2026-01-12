@@ -1325,34 +1325,35 @@ export default function TrainingDetailPage() {
               {training.trainingPlayers.map((tp) => (
                 <div
                   key={tp.player.id}
-                  className={`flex items-center justify-between p-2 rounded-lg border transition-opacity ${
+                  className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-2 rounded-lg border transition-opacity gap-2 ${
                     tp.paused ? 'opacity-50 bg-muted/50' : ''
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium">{tp.player.name}</p>
                       {tp.paused && (
                         <Badge variant="outline" className="text-xs">
                           Pauseret
                         </Badge>
                       )}
+                      {!tp.player.isActive && (
+                        <Badge variant="secondary" className="text-xs">Inaktiv</Badge>
+                      )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Niveau: {Math.round(tp.player.level)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {!tp.player.isActive && (
-                      <Badge variant="secondary">Inaktiv</Badge>
-                    )}
-                    {getTrainingStatus() === 'IN_PROGRESS' && (
+                  {getTrainingStatus() === 'IN_PROGRESS' && (
+                    <div className="flex items-center justify-end sm:justify-start">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handlePausePlayer(tp.player.id, tp.paused)}
                         disabled={pausingPlayerId === tp.player.id}
                         title={tp.paused ? 'Genoptag spiller' : 'Pausér spiller'}
+                        className="h-9"
                       >
                         {tp.paused ? (
                           <PlayCircle className="h-4 w-4 text-green-600" />
@@ -1360,8 +1361,8 @@ export default function TrainingDetailPage() {
                           <Pause className="h-4 w-4 text-orange-600" />
                         )}
                       </Button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
