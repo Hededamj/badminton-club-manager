@@ -231,7 +231,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all",
                 "hover:bg-accent hover:text-accent-foreground",
-                isActive && "bg-primary text-primary-foreground"
+                isActive && "bg-[#005A9C] text-white"
               )}
             >
               <Icon className="w-5 h-5" />
@@ -252,7 +252,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all",
                 "hover:bg-accent hover:text-accent-foreground",
-                pathname === '/club/settings' && "bg-primary text-primary-foreground"
+                pathname === '/club/settings' && "bg-[#005A9C] text-white"
               )}
             >
               <Settings className="w-5 h-5" />
@@ -264,7 +264,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all",
                 "hover:bg-accent hover:text-accent-foreground",
-                pathname === '/club/members' && "bg-primary text-primary-foreground"
+                pathname === '/club/members' && "bg-[#005A9C] text-white"
               )}
             >
               <Users className="w-5 h-5" />
@@ -276,7 +276,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all",
                 "hover:bg-accent hover:text-accent-foreground",
-                pathname === '/club/invite' && "bg-primary text-primary-foreground"
+                pathname === '/club/invite' && "bg-[#005A9C] text-white"
               )}
             >
               <UserPlus className="w-5 h-5" />
