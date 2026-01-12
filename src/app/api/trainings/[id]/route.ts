@@ -73,8 +73,10 @@ export async function GET(
     })
   } catch (error) {
     console.error('Error fetching training:', error)
+    console.error('Error details:', error instanceof Error ? error.message : String(error))
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack')
     return NextResponse.json(
-      { error: 'Failed to fetch training' },
+      { error: 'Failed to fetch training', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
