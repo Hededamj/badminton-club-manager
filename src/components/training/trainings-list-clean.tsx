@@ -1,10 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Calendar as CalendarIcon, Users, Download, ChevronRight, Activity } from 'lucide-react'
+import { Plus, Calendar as CalendarIcon, Users, Download, ChevronRight, Activity, LayoutGrid, List, Clock, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { format } from 'date-fns'
+import { format, isPast, isToday } from 'date-fns'
 import { da } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
 
 interface Training {
   id: string
@@ -35,18 +37,18 @@ interface TrainingsListCleanProps {
 const statusConfig = {
   PLANNED: {
     label: 'Planlagt',
-    color: 'text-blue-600',
-    bg: 'bg-blue-100',
+    color: 'text-[#005A9C]',
+    bg: 'bg-[#005A9C]/10',
   },
   IN_PROGRESS: {
     label: 'I gang',
-    color: 'text-orange-600',
-    bg: 'bg-orange-100',
+    color: 'text-[#005A9C]',
+    bg: 'bg-[#005A9C]/20',
   },
   COMPLETED: {
     label: 'Afsluttet',
-    color: 'text-green-600',
-    bg: 'bg-green-100',
+    color: 'text-muted-foreground',
+    bg: 'bg-muted',
   },
   CANCELLED: {
     label: 'Aflyst',
@@ -63,70 +65,207 @@ export function TrainingsListClean({
   onImportClick,
 }: TrainingsListCleanProps) {
   const router = useRouter()
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+  // Split trainings into upcoming and past
+  const isTrainingPast = (training: Training) => {
+    const trainingDate = new Date(training.date)
+    return training.status === 'COMPLETED' || training.status === 'CANCELLED' || (isPast(trainingDate) && !isToday(trainingDate))
+  }
+
+  const upcomingTrainings = trainings.filter(t => !isTrainingPast(t))
+  const pastTrainings = trainings.filter(t => isTrainingPast(t))
+
+  // Render training card (grid view)
+  const renderTrainingCard = (training: Training, isPast: boolean) => {
+    const config = statusConfig[training.status as keyof typeof statusConfig] || statusConfig.PLANNED
+    const trainingDate = new Date(training.date)
+
+    return (
+      <div
+        key={training.id}
+        onClick={() => router.push(`/trainings/${training.id}`)}
+        className={cn(
+          "group bg-card border rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer touch-manipulation",
+          isPast && "opacity-75"
+        )}
+      >
+        {/* Status bar */}
+        <div className={cn(
+          "h-1.5",
+          training.status === 'IN_PROGRESS' ? 'bg-[#005A9C]' :
+          isPast ? 'bg-muted' : 'bg-[#005A9C]/50'
+        )} />
+
+        <div className="p-4">
+          {/* Date and Status */}
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="flex items-center gap-3">
+              <div className="text-center px-3 py-2 rounded-lg bg-muted/50">
+                <div className={cn(
+                  "text-2xl font-bold",
+                  isPast ? "text-muted-foreground" : "text-[#005A9C]"
+                )}>
+                  {format(trainingDate, 'd', { locale: da })}
+                </div>
+                <div className="text-[10px] text-muted-foreground uppercase">
+                  {format(trainingDate, 'MMM', { locale: da })}
+                </div>
+              </div>
+              <div>
+                <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
+                  {config.label}
+                </span>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-[#005A9C] transition-colors flex-shrink-0 mt-1" />
+          </div>
+
+          {/* Title */}
+          <h3 className={cn(
+            "font-semibold text-sm mb-3 transition-colors line-clamp-2",
+            isPast ? "group-hover:text-muted-foreground" : "group-hover:text-[#005A9C]"
+          )}>
+            {training.name}
+          </h3>
+
+          {/* Stats */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground pt-3 border-t">
+            <div className="flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5" />
+              <span>{training.trainingPlayers.length}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Activity className="h-3.5 w-3.5" />
+              <span>{training.courts} baner</span>
+            </div>
+            {training._count.matches > 0 && (
+              <span className="ml-auto">{training._count.matches} kampe</span>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Render training row (list view)
+  const renderTrainingRow = (training: Training, isPast: boolean) => {
+    const config = statusConfig[training.status as keyof typeof statusConfig] || statusConfig.PLANNED
+    const trainingDate = new Date(training.date)
+
+    return (
+      <tr
+        key={training.id}
+        onClick={() => router.push(`/trainings/${training.id}`)}
+        className={cn(
+          "border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer group",
+          isPast && "opacity-75"
+        )}
+      >
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "text-center px-2 py-1 rounded bg-muted/50 min-w-[45px]",
+            )}>
+              <div className={cn(
+                "text-lg font-bold",
+                isPast ? "text-muted-foreground" : "text-[#005A9C]"
+              )}>
+                {format(trainingDate, 'd', { locale: da })}
+              </div>
+              <div className="text-[10px] text-muted-foreground uppercase">
+                {format(trainingDate, 'MMM', { locale: da })}
+              </div>
+            </div>
+            <div>
+              <div className={cn(
+                "font-medium",
+                isPast ? "group-hover:text-muted-foreground" : "group-hover:text-[#005A9C]"
+              )}>
+                {training.name}
+              </div>
+              <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${config.bg} ${config.color} mt-1`}>
+                {config.label}
+              </span>
+            </div>
+          </div>
+        </td>
+        <td className="px-4 py-3 text-center text-sm hidden sm:table-cell">
+          <span className="font-medium">{training.trainingPlayers.length}</span>
+        </td>
+        <td className="px-4 py-3 text-center text-sm hidden md:table-cell">
+          {training.courts}
+        </td>
+        <td className="px-4 py-3 text-center text-sm hidden md:table-cell">
+          {training._count.matches}
+        </td>
+        <td className="px-4 py-3">
+          <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-[#005A9C] transition-colors ml-auto" />
+        </td>
+      </tr>
+    )
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[#005A9C]">Træninger</h1>
-          <p className="text-muted-foreground mt-1">
-            {!loading && `${trainings.length} ${trainings.length === 1 ? 'session' : 'sessioner'}`}
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#005A9C]">Træninger</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+            {!loading && `${upcomingTrainings.length} kommende · ${pastTrainings.length} afholdte`}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Button
             variant="outline"
             onClick={onImportClick}
+            size="sm"
+            className="sm:size-default"
           >
-            <Download className="mr-2 h-4 w-4" />
-            Importer
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Importer</span>
           </Button>
           <Button
             onClick={() => router.push('/trainings/new')}
-            className="bg-[#005A9C] hover:bg-[#004A7C]"
+            size="sm"
+            className="bg-[#005A9C] hover:bg-[#004A7C] sm:size-default"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Ny træning
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Ny træning</span>
           </Button>
         </div>
       </div>
 
-      {/* Status Filter */}
-      <div className="flex gap-2 flex-wrap">
-        <Button
-          variant={statusFilter === 'ALL' ? 'default' : 'outline'}
-          onClick={() => onStatusFilterChange('ALL')}
-          size="sm"
-          className={statusFilter === 'ALL' ? 'bg-[#005A9C] hover:bg-[#004A7C]' : ''}
-        >
-          Alle
-        </Button>
-        <Button
-          variant={statusFilter === 'PLANNED' ? 'default' : 'outline'}
-          onClick={() => onStatusFilterChange('PLANNED')}
-          size="sm"
-          className={statusFilter === 'PLANNED' ? 'bg-[#005A9C] hover:bg-[#004A7C]' : ''}
-        >
-          Planlagt
-        </Button>
-        <Button
-          variant={statusFilter === 'IN_PROGRESS' ? 'default' : 'outline'}
-          onClick={() => onStatusFilterChange('IN_PROGRESS')}
-          size="sm"
-          className={statusFilter === 'IN_PROGRESS' ? 'bg-[#005A9C] hover:bg-[#004A7C]' : ''}
-        >
-          I gang
-        </Button>
-        <Button
-          variant={statusFilter === 'COMPLETED' ? 'default' : 'outline'}
-          onClick={() => onStatusFilterChange('COMPLETED')}
-          size="sm"
-          className={statusFilter === 'COMPLETED' ? 'bg-[#005A9C] hover:bg-[#004A7C]' : ''}
-        >
-          Afsluttet
-        </Button>
+      {/* View Toggle */}
+      <div className="flex items-center justify-end">
+        <div className="flex items-center border rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={cn(
+              "p-2 rounded transition-colors touch-manipulation",
+              viewMode === 'grid'
+                ? "bg-[#005A9C] text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+            title="Kort visning"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={cn(
+              "p-2 rounded transition-colors touch-manipulation",
+              viewMode === 'list'
+                ? "bg-[#005A9C] text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+            title="Liste visning"
+          >
+            <List className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Trainings List */}
@@ -153,69 +292,96 @@ export function TrainingsListClean({
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {trainings.map((training) => {
-            const config = statusConfig[training.status as keyof typeof statusConfig] || statusConfig.PLANNED
-            const trainingDate = new Date(training.date)
+        <div className="space-y-8">
+          {/* Upcoming Trainings */}
+          {upcomingTrainings.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="h-5 w-5 text-[#005A9C]" />
+                <h2 className="text-lg font-semibold">Kommende træninger</h2>
+                <span className="text-sm text-muted-foreground">({upcomingTrainings.length})</span>
+              </div>
 
-            return (
-              <div
-                key={training.id}
-                onClick={() => router.push(`/trainings/${training.id}`)}
-                className="group bg-card border rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer touch-manipulation"
-              >
-                {/* Status bar */}
-                <div className={`h-1.5 ${
-                  training.status === 'IN_PROGRESS' ? 'bg-orange-500' :
-                  training.status === 'COMPLETED' ? 'bg-green-500' :
-                  training.status === 'CANCELLED' ? 'bg-muted' :
-                  'bg-[#005A9C]'
-                }`} />
-
-                <div className="p-4">
-                  {/* Date and Status */}
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="text-center px-3 py-2 rounded-lg bg-muted/50">
-                        <div className="text-2xl font-bold text-[#005A9C]">
-                          {format(trainingDate, 'd', { locale: da })}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground uppercase">
-                          {format(trainingDate, 'MMM', { locale: da })}
-                        </div>
-                      </div>
-                      <div>
-                        <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
-                          {config.label}
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-[#005A9C] transition-colors flex-shrink-0 mt-1" />
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="font-semibold text-sm mb-3 group-hover:text-[#005A9C] transition-colors line-clamp-2">
-                    {training.name}
-                  </h3>
-
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground pt-3 border-t">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-3.5 w-3.5" />
-                      <span>{training.trainingPlayers.length}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Activity className="h-3.5 w-3.5" />
-                      <span>{training.courts} baner</span>
-                    </div>
-                    {training._count.matches > 0 && (
-                      <span className="ml-auto">{training._count.matches} kampe</span>
-                    )}
+              {viewMode === 'grid' ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {upcomingTrainings.map((training) => renderTrainingCard(training, false))}
+                </div>
+              ) : (
+                <div className="bg-card border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="text-left px-4 py-3 text-sm font-medium">Træning</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium hidden sm:table-cell">Spillere</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium hidden md:table-cell">Baner</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium hidden md:table-cell">Kampe</th>
+                          <th className="w-12"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {upcomingTrainings.map((training) => renderTrainingRow(training, false))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Past Trainings */}
+          {pastTrainings.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold text-muted-foreground">Afholdte træninger</h2>
+                <span className="text-sm text-muted-foreground">({pastTrainings.length})</span>
               </div>
-            )
-          })}
+
+              {viewMode === 'grid' ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {pastTrainings.map((training) => renderTrainingCard(training, true))}
+                </div>
+              ) : (
+                <div className="bg-card border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="text-left px-4 py-3 text-sm font-medium">Træning</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium hidden sm:table-cell">Spillere</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium hidden md:table-cell">Baner</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium hidden md:table-cell">Kampe</th>
+                          <th className="w-12"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pastTrainings.map((training) => renderTrainingRow(training, true))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Empty state for both sections */}
+          {upcomingTrainings.length === 0 && pastTrainings.length === 0 && (
+            <div className="text-center py-20 border-2 border-dashed rounded-lg bg-muted/30">
+              <CalendarIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Ingen træninger fundet</h3>
+              <p className="text-muted-foreground mb-6">
+                Opret din første træning for at komme i gang.
+              </p>
+              <Button
+                onClick={() => router.push('/trainings/new')}
+                className="bg-[#005A9C] hover:bg-[#004A7C]"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Opret træning
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
