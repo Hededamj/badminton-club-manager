@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubAdmin } from '@/lib/auth-helpers'
 
 // Helper to check if match should be mixed doubles
 function shouldBeMixedDoubles(
@@ -62,14 +61,16 @@ export async function POST(
 ) {
   try {
     const params = await props.params
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get tournament with players
-    const tournament = await prisma.tournament.findUnique({
-      where: { id: params.id },
+    const clubId = session.user.currentClubId!
+
+    // Get tournament with players (verify it belongs to current club)
+    const tournament = await prisma.tournament.findFirst({
+      where: { id: params.id, clubId },
       include: {
         tournamentPlayers: {
           include: {

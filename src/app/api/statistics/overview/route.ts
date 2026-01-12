@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubMember } from '@/lib/auth-helpers'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await requireClubMember()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get total counts
+    const clubId = session.user.currentClubId!
+
+    // Get total counts (filtered by club)
     const [
       totalPlayers,
       activePlayers,
@@ -18,20 +19,22 @@ export async function GET(req: NextRequest) {
       totalMatches,
       completedMatches,
     ] = await Promise.all([
-      prisma.player.count(),
-      prisma.player.count({ where: { isActive: true } }),
-      prisma.training.count(),
-      prisma.match.count(),
-      prisma.match.count({ where: { status: 'COMPLETED' } }),
+      prisma.player.count({ where: { clubId } }),
+      prisma.player.count({ where: { clubId, isActive: true } }),
+      prisma.training.count({ where: { clubId } }),
+      prisma.match.count({ where: { training: { clubId } } }),
+      prisma.match.count({ where: { training: { clubId }, status: 'COMPLETED' } }),
     ])
 
-    // Get average player level
+    // Get average player level (for club)
     const avgLevel = await prisma.player.aggregate({
+      where: { clubId },
       _avg: { level: true },
     })
 
-    // Get recent trainings
+    // Get recent trainings (for club)
     const recentTrainings = await prisma.training.findMany({
+      where: { clubId },
       take: 5,
       orderBy: { date: 'desc' },
       include: {
@@ -42,10 +45,11 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    // Get top performers (by win rate, minimum 5 matches)
+    // Get top performers (by win rate, minimum 5 matches, for club)
     const topPerformers = await prisma.playerStatistics.findMany({
       where: {
         totalMatches: { gte: 5 },
+        player: { clubId },
       },
       orderBy: [
         { winRate: 'desc' },

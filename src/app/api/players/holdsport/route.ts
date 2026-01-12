@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubAdmin } from '@/lib/auth-helpers'
 
 interface HoldsportTeam {
   id: string
@@ -110,8 +109,8 @@ export async function POST(request: NextRequest) {
 
     let session
     try {
-      session = await getServerSession(authOptions)
-      console.log('Session retrieved:', session ? `User: ${session.user?.email}, Role: ${session.user?.role}` : 'No session')
+      session = await requireClubAdmin()
+      console.log('Session retrieved:', session ? `User: ${session.user?.email}, Club: ${session.user?.currentClubId}` : 'No session')
     } catch (sessionError: unknown) {
       console.error('Session error:', sessionError)
       return NextResponse.json(
@@ -120,10 +119,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!session || session.user.role !== 'ADMIN') {
-      console.error('Unauthorized access attempt:', session?.user?.email)
+    if (!session) {
+      console.error('Unauthorized access attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     console.log('Step 2: Parsing request body...')
     let body
@@ -275,9 +276,9 @@ export async function POST(request: NextRequest) {
         console.log(`  - member.gender from Holdsport: "${member.gender}"`)
         console.log(`  - mapped gender: ${gender || 'N/A'}`)
 
-        // Check if player exists by holdsportId only (GDPR: ikke import email/telefon)
-        const existingPlayer = await prisma.player.findUnique({
-          where: { holdsportId: memberIdStr },
+        // Check if player exists by clubId + holdsportId (GDPR: ikke import email/telefon)
+        const existingPlayer = await prisma.player.findFirst({
+          where: { clubId, holdsportId: memberIdStr },
         })
         console.log(`  Found by holdsportId: ${!!existingPlayer}`)
 
@@ -301,6 +302,7 @@ export async function POST(request: NextRequest) {
           console.log(`  Creating new player`)
           player = await prisma.player.create({
             data: {
+              clubId,
               name: playerName,
               holdsportId: memberIdStr,
               level: 1500,

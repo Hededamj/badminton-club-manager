@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
 import { createTournamentSchema } from '@/lib/validators/tournament'
+import { requireClubMember, requireClubAdmin } from '@/lib/auth-helpers'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await requireClubMember()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const clubId = session.user.currentClubId!
+
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status')
 
-    const where: any = {}
+    const where: any = { clubId }
     if (status) {
       where.status = status
     }
@@ -41,16 +42,19 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const body = await req.json()
     const validatedData = createTournamentSchema.parse(body)
 
     const tournament = await prisma.tournament.create({
       data: {
+        clubId,
         name: validatedData.name,
         startDate: new Date(validatedData.startDate),
         endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,

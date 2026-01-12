@@ -6,6 +6,23 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Seeding database...')
 
+  // Get or create default club
+  let club = await prisma.club.findFirst({
+    where: { slug: 'htk-badminton' },
+  })
+
+  if (!club) {
+    club = await prisma.club.create({
+      data: {
+        name: 'HTK Badminton',
+        slug: 'htk-badminton',
+        description: 'Default badminton club',
+        isActive: true,
+      },
+    })
+    console.log('✅ Created default club:', club.name)
+  }
+
   // Check if admin already exists
   const existingAdmin = await prisma.user.findUnique({
     where: { email: 'admin@badminton.dk' },
@@ -15,13 +32,17 @@ async function main() {
 
   if (existingAdmin) {
     console.log('ℹ️  Admin user already exists')
-    adminPlayer = await prisma.player.findUnique({
-      where: { id: existingAdmin.playerId! },
+    // Find admin player by membership
+    const membership = await prisma.clubMembership.findFirst({
+      where: { userId: existingAdmin.id, clubId: club.id },
+      include: { player: true },
     })
+    adminPlayer = membership?.player
   } else {
     // Create admin player
     adminPlayer = await prisma.player.create({
       data: {
+        clubId: club.id,
         name: 'Admin',
         email: 'admin@badminton.dk',
         level: 1500,
@@ -39,7 +60,17 @@ async function main() {
         email: 'admin@badminton.dk',
         passwordHash: passwordHash,
         role: 'ADMIN',
+      },
+    })
+
+    // Create club membership
+    await prisma.clubMembership.create({
+      data: {
+        userId: adminUser.id,
+        clubId: club.id,
+        role: 'OWNER',
         playerId: adminPlayer.id,
+        isActive: true,
       },
     })
 
@@ -68,9 +99,9 @@ async function main() {
   ]
 
   for (const playerData of testPlayers) {
-    // Check if player already exists
-    const existing = await prisma.player.findUnique({
-      where: { email: playerData.email },
+    // Check if player already exists (using composite unique key)
+    const existing = await prisma.player.findFirst({
+      where: { clubId: club.id, email: playerData.email },
     })
 
     if (existing) {
@@ -80,6 +111,7 @@ async function main() {
 
     const player = await prisma.player.create({
       data: {
+        clubId: club.id,
         ...playerData,
         isActive: true,
       },

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubAdmin } from '@/lib/auth-helpers'
 
 interface HoldsportActivity {
   id: number
@@ -23,10 +22,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const body = await request.json()
     const { username, password, teamId } = body
@@ -41,9 +42,9 @@ export async function POST(
     // Await params (Next.js 15 requirement)
     const { id } = await params
 
-    // Fetch training from database
-    const training = await prisma.training.findUnique({
-      where: { id },
+    // Fetch training from database (verify it belongs to current club)
+    const training = await prisma.training.findFirst({
+      where: { id, clubId },
       include: {
         trainingPlayers: {
           include: {
@@ -104,9 +105,9 @@ export async function POST(
       user.name.trim().toLowerCase()
     )
 
-    // Find matching players in our database
+    // Find matching players in our database (filtered by club)
     const allPlayers = await prisma.player.findMany({
-      where: { isActive: true },
+      where: { clubId, isActive: true },
     })
 
     const matchedPlayers = allPlayers.filter(player =>

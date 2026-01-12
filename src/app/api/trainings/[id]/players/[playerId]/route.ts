@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubAdmin } from '@/lib/auth-helpers'
 
 // PATCH /api/trainings/[id]/players/[playerId] - Pause/unpause player
 export async function PATCH(
@@ -9,12 +8,22 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; playerId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const clubId = session.user.currentClubId!
     const { id: trainingId, playerId } = await params
+
+    // Verify training belongs to current club
+    const trainingCheck = await prisma.training.findFirst({
+      where: { id: trainingId, clubId },
+    })
+
+    if (!trainingCheck) {
+      return NextResponse.json({ error: 'Training not found' }, { status: 404 })
+    }
     const body = await request.json()
     const { paused } = body
 

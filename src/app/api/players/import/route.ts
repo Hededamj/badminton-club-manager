@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { requireClubAdmin } from '@/lib/auth-helpers'
 
 // POST /api/players/import - Import players from Holdsport
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await requireClubAdmin()
 
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const body = await req.json()
     const { playerData, players: playersArray } = body
@@ -64,18 +65,18 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        // Check if player already exists by email or holdsportId
+        // Check if player already exists by email or holdsportId (within club)
         let existing = null
 
         if (email) {
-          existing = await db.player.findUnique({
-            where: { email },
+          existing = await db.player.findFirst({
+            where: { clubId, email },
           })
         }
 
         if (!existing && holdsportId) {
-          existing = await db.player.findUnique({
-            where: { holdsportId },
+          existing = await db.player.findFirst({
+            where: { clubId, holdsportId },
           })
         }
 
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
 
         // Create player with all fields
         const createData: any = {
+          clubId,
           name,
           level: level || 1500,
           isActive: isActive ?? true,

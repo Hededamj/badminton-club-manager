@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubAdmin } from '@/lib/auth-helpers'
 
 interface HoldsportActivity {
   id: number
@@ -20,8 +19,8 @@ interface HoldsportActivity {
 // GET /api/trainings/holdsport - Fetch upcoming trainings from Holdsport
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -145,10 +144,12 @@ export async function GET(request: NextRequest) {
 // POST /api/trainings/holdsport - Import a training from Holdsport
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const body = await request.json()
     const { training, username, password, teamId } = body
@@ -166,9 +167,10 @@ export async function POST(request: NextRequest) {
     const trainingDate = new Date(training.date)
     console.log('Training date:', trainingDate)
 
-    // Check if training already exists by holdsportId
-    const existingTraining = await prisma.training.findUnique({
+    // Check if training already exists by clubId + holdsportId
+    const existingTraining = await prisma.training.findFirst({
       where: {
+        clubId,
         holdsportId: training.holdsportId,
       },
     })
@@ -212,9 +214,9 @@ export async function POST(request: NextRequest) {
 
     console.log('Attending names:', attendingNames)
 
-    // Find matching players in our database
+    // Find matching players in our database (filtered by club)
     const allPlayers = await prisma.player.findMany({
-      where: { isActive: true },
+      where: { clubId, isActive: true },
     })
 
     const matchedPlayers = allPlayers.filter(player =>
@@ -228,6 +230,7 @@ export async function POST(request: NextRequest) {
     // Create training
     const createdTraining = await prisma.training.create({
       data: {
+        clubId,
         name: training.name,
         date: trainingDate,
         courts: 3, // Default value

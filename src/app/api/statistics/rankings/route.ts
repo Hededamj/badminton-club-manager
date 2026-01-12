@@ -1,26 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubMember } from '@/lib/auth-helpers'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await requireClubMember()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const { searchParams } = new URL(req.url)
     const sortBy = searchParams.get('sortBy') || 'level'
     const activeOnly = searchParams.get('activeOnly') === 'true'
 
-    // Build where clause
-    const where: any = {}
+    // Build where clause (filtered by club)
+    const where: any = { clubId }
     if (activeOnly) {
       where.isActive = true
     }
 
-    // Get all players with statistics
+    // Get all players with statistics (for club)
     let players = await prisma.player.findMany({
       where,
       include: {

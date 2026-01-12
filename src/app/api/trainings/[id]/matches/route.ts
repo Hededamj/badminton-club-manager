@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubAdmin } from '@/lib/auth-helpers'
 import { generateMatches, Player } from '@/lib/matchmaking/algorithm'
 
 export async function POST(
@@ -10,14 +9,16 @@ export async function POST(
 ) {
   try {
     const params = await props.params
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get training with players
-    const training = await prisma.training.findUnique({
-      where: { id: params.id },
+    const clubId = session.user.currentClubId!
+
+    // Get training with players (verify it belongs to current club)
+    const training = await prisma.training.findFirst({
+      where: { id: params.id, clubId },
       include: {
         trainingPlayers: {
           include: {

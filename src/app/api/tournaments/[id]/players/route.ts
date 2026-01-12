@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubAdmin } from '@/lib/auth-helpers'
 
 export async function POST(
   req: NextRequest,
@@ -9,10 +8,12 @@ export async function POST(
 ) {
   try {
     const params = await props.params
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const body = await req.json()
     const { playerIds } = body
@@ -24,18 +25,18 @@ export async function POST(
       )
     }
 
-    // Check if tournament exists
-    const tournament = await prisma.tournament.findUnique({
-      where: { id: params.id },
+    // Check if tournament exists and belongs to current club
+    const tournament = await prisma.tournament.findFirst({
+      where: { id: params.id, clubId },
     })
 
     if (!tournament) {
       return NextResponse.json({ error: 'Tournament not found' }, { status: 404 })
     }
 
-    // Check if players exist
+    // Check if players exist and belong to current club
     const players = await prisma.player.findMany({
-      where: { id: { in: playerIds } },
+      where: { id: { in: playerIds }, clubId },
     })
 
     if (players.length !== playerIds.length) {
@@ -105,10 +106,12 @@ export async function DELETE(
 ) {
   try {
     const params = await props.params
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const { searchParams } = new URL(req.url)
     const playerId = searchParams.get('playerId')
@@ -118,6 +121,15 @@ export async function DELETE(
         { error: 'Player ID is required' },
         { status: 400 }
       )
+    }
+
+    // Verify tournament belongs to current club
+    const tournament = await prisma.tournament.findFirst({
+      where: { id: params.id, clubId },
+    })
+
+    if (!tournament) {
+      return NextResponse.json({ error: 'Tournament not found' }, { status: 404 })
     }
 
     // Remove player from tournament

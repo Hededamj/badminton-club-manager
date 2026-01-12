@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db as prisma } from '@/lib/db'
+import { requireClubAdmin } from '@/lib/auth-helpers'
 
 interface HoldsportActivity {
   id: number
@@ -20,8 +19,8 @@ interface HoldsportActivity {
 // GET /api/tournaments/holdsport - Fetch activities from Holdsport that could be tournaments
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -123,10 +122,12 @@ export async function GET(request: NextRequest) {
 // POST /api/tournaments/holdsport - Import a tournament from Holdsport
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    const session = await requireClubAdmin()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const clubId = session.user.currentClubId!
 
     const body = await request.json()
     const { tournament, username, password, teamId, format, matchTypes } = body
@@ -172,9 +173,9 @@ export async function POST(request: NextRequest) {
       user.name.trim().toLowerCase()
     )
 
-    // Find matching players in our database
+    // Find matching players in our database (filtered by club)
     const allPlayers = await prisma.player.findMany({
-      where: { isActive: true },
+      where: { clubId, isActive: true },
     })
 
     const matchedPlayers = allPlayers.filter(player =>
@@ -188,6 +189,7 @@ export async function POST(request: NextRequest) {
     // Create tournament
     const createdTournament = await prisma.tournament.create({
       data: {
+        clubId,
         name: tournament.name,
         startDate: startDate,
         endDate: startDate, // Default end date to start date
