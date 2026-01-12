@@ -10,17 +10,86 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Club model for multi-tenancy
+model Club {
+  id              String    @id @default(uuid())
+  name            String    @db.VarChar(255)
+  slug            String    @unique @db.VarChar(100)
+  description     String?   @db.Text
+  logo            String?   @db.VarChar(500)
+  settings        Json?
+  holdsportTeamId String?   @unique @map("holdsport_team_id")
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  memberships     ClubMembership[]
+  players         Player[]
+  trainings       Training[]
+  tournaments     Tournament[]
+  invitations     ClubInvitation[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("clubs")
+}
+
+// Club membership (User <-> Club with role)
+model ClubMembership {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  clubId    String    @map("club_id")
+  role      ClubRole  @default(MEMBER)
+  playerId  String?   @unique @map("player_id")
+  isActive  Boolean   @default(true) @map("is_active")
+  joinedAt  DateTime  @default(now()) @map("joined_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club      Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  player    Player?   @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, clubId])
+  @@index([userId])
+  @@index([clubId])
+  @@index([playerId])
+  @@map("club_memberships")
+}
+
+// Club invitation
+model ClubInvitation {
+  id         String    @id @default(uuid())
+  clubId     String    @map("club_id")
+  email      String    @db.VarChar(255)
+  role       ClubRole  @default(MEMBER)
+  token      String    @unique @default(uuid())
+  expiresAt  DateTime  @map("expires_at")
+  usedAt     DateTime? @map("used_at")
+  createdBy  String    @map("created_by")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  club       Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  creator    User      @relation(fields: [createdBy], references: [id])
+
+  @@index([clubId])
+  @@index([token])
+  @@index([email])
+  @@map("club_invitations")
+}
+
 // User model for authentication
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String    @map("password_hash")
-  role          UserRole  @default(PLAYER)
-  playerId      String?   @unique @map("player_id")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id            String           @id @default(uuid())
+  email         String           @unique
+  passwordHash  String           @map("password_hash")
+  role          UserRole         @default(PLAYER)
+  playerId      String?          @unique @map("player_id")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
 
-  player        Player?   @relation(fields: [playerId], references: [id])
+  player             Player?          @relation(fields: [playerId], references: [id])
+  memberships        ClubMembership[]
+  createdInvitations ClubInvitation[]
 
   @@map("users")
 }
@@ -60,16 +129,19 @@ model TeamPlayer {
 // Player model
 model Player {
   id                String    @id @default(uuid())
+  clubId            String?   @map("club_id")  // Will be required after migration
   name              String    @db.VarChar(255)
-  email             String?   @unique @db.VarChar(255)
+  email             String?   @db.VarChar(255)
   phone             String?   @db.VarChar(20)
-  holdsportId       String?   @unique @map("holdsport_id")
+  holdsportId       String?   @map("holdsport_id")
   level             Float     @default(1500) // ELO-style rating
   gender            Gender?   // For mixed doubles
   isActive          Boolean   @default(true) @map("is_active")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
+  club              Club?     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  membership        ClubMembership?
   user              User?
   teamPlayers       TeamPlayer[]
   trainingPlayers   TrainingPlayer[]
@@ -81,6 +153,9 @@ model Player {
   oppositionsAsPlayer1  Opposition[]  @relation("Player1Oppositions")
   oppositionsAsPlayer2  Opposition[]  @relation("Player2Oppositions")
 
+  @@unique([clubId, email])
+  @@unique([clubId, holdsportId])
+  @@index([clubId])
   @@index([level])
   @@index([isActive])
   @@map("players")
@@ -108,6 +183,7 @@ model PlayerStatistics {
 // Training session
 model Training {
   id              String          @id @default(uuid())
+  clubId          String?         @map("club_id")  // Will be required after migration
   name            String          @db.VarChar(255)
   date            DateTime        @db.Date
   startTime       DateTime?       @map("start_time")
@@ -119,9 +195,11 @@ model Training {
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
+  club            Club?           @relation(fields: [clubId], references: [id], onDelete: Cascade)
   trainingPlayers TrainingPlayer[]
   matches         Match[]
 
+  @@index([clubId])
   @@index([date])
   @@index([status])
   @@map("trainings")
@@ -242,6 +320,7 @@ model Opposition {
 // Tournament
 model Tournament {
   id                String              @id @default(uuid())
+  clubId            String?             @map("club_id")  // Will be required after migration
   name              String              @db.VarChar(255)
   startDate         DateTime            @map("start_date") @db.Date
   endDate           DateTime?           @map("end_date") @db.Date
@@ -252,9 +331,11 @@ model Tournament {
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @updatedAt @map("updated_at")
 
+  club              Club?               @relation(fields: [clubId], references: [id], onDelete: Cascade)
   matches           Match[]
   tournamentPlayers TournamentPlayer[]
 
+  @@index([clubId])
   @@index([status])
   @@map("tournaments")
 }
@@ -279,6 +360,12 @@ model TournamentPlayer {
 enum UserRole {
   ADMIN
   PLAYER
+}
+
+enum ClubRole {
+  OWNER   // Full control, can delete club
+  ADMIN   // Can manage club settings, players, trainings
+  MEMBER  // Can view and participate
 }
 
 enum TrainingStatus {
