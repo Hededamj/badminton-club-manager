@@ -117,7 +117,7 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-card border-r shadow-xl lg:shadow-none">
+    <div className="flex flex-col h-full w-full bg-card border-r overflow-hidden">
       {/* Club Header - Prominent */}
       <div className="p-4 border-b">
         <div className="relative">
