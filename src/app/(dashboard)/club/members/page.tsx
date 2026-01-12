@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Users, Crown, Shield, User, Trash2, Loader2, UserPlus } from 'lucide-react'
+import { Users, Crown, Shield, User, Trash2, Loader2, UserPlus, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 
 interface Member {
   id: string
@@ -28,6 +29,8 @@ export default function ClubMembersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [changingRoleId, setChangingRoleId] = useState<string | null>(null)
+  const [openRoleMenuId, setOpenRoleMenuId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchMembers()
@@ -47,6 +50,54 @@ export default function ClubMembersPage() {
       setError('Kunne ikke hente medlemmer')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  async function handleChangeRole(membershipId: string, newRole: 'OWNER' | 'ADMIN' | 'MEMBER') {
+    const member = members.find(m => m.id === membershipId)
+    if (!member) return
+
+    // Confirm ownership transfer
+    if (newRole === 'OWNER') {
+      const confirmed = confirm(
+        `Er du sikker på at du vil overdrage ejerskabet til ${member.player?.name || member.user.email}?\n\nDu vil blive nedgraderet til Administrator.`
+      )
+      if (!confirmed) {
+        setOpenRoleMenuId(null)
+        return
+      }
+    }
+
+    setChangingRoleId(membershipId)
+    setOpenRoleMenuId(null)
+
+    try {
+      const response = await fetch('/api/clubs/members', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ membershipId, role: newRole }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // If ownership was transferred, refresh to get updated roles for everyone
+        if (data.ownershipTransferred) {
+          window.location.reload()
+        } else {
+          // Just update the single member
+          setMembers(members.map(m =>
+            m.id === membershipId ? { ...m, role: newRole } : m
+          ))
+        }
+      } else {
+        alert(data.error || 'Kunne ikke ændre rolle')
+      }
+    } catch (error) {
+      console.error('Error changing role:', error)
+      alert('Kunne ikke ændre rolle')
+    } finally {
+      setChangingRoleId(null)
     }
   }
 
@@ -95,6 +146,17 @@ export default function ClubMembersPage() {
         return 'Administrator'
       default:
         return 'Medlem'
+    }
+  }
+
+  function getRoleColor(role: string) {
+    switch (role) {
+      case 'OWNER':
+        return 'text-amber-600 bg-amber-50'
+      case 'ADMIN':
+        return 'text-blue-600 bg-blue-50'
+      default:
+        return 'text-gray-600 bg-gray-50'
     }
   }
 
@@ -162,10 +224,83 @@ export default function ClubMembersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {getRoleIcon(member.role)}
-                      <span className="text-sm">{getRoleName(member.role)}</span>
-                    </div>
+                    {isOwner && member.user.id !== session?.user?.id ? (
+                      // Role dropdown for owner (can change other members' roles)
+                      <div className="relative">
+                        <button
+                          onClick={() => setOpenRoleMenuId(openRoleMenuId === member.id ? null : member.id)}
+                          disabled={changingRoleId === member.id}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                            getRoleColor(member.role),
+                            "hover:opacity-80",
+                            changingRoleId === member.id && "opacity-50"
+                          )}
+                        >
+                          {changingRoleId === member.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            getRoleIcon(member.role)
+                          )}
+                          <span>{getRoleName(member.role)}</span>
+                          <ChevronDown className={cn(
+                            "w-3 h-3 transition-transform",
+                            openRoleMenuId === member.id && "rotate-180"
+                          )} />
+                        </button>
+
+                        {openRoleMenuId === member.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={() => setOpenRoleMenuId(null)}
+                            />
+                            <div className="absolute left-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg py-1 min-w-[160px]">
+                              <button
+                                onClick={() => handleChangeRole(member.id, 'OWNER')}
+                                className={cn(
+                                  "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors text-left",
+                                  member.role === 'OWNER' && "bg-accent"
+                                )}
+                              >
+                                <Crown className="w-4 h-4 text-amber-500" />
+                                <span>Ejer</span>
+                                <span className="text-xs text-muted-foreground ml-auto">Overdrag</span>
+                              </button>
+                              <button
+                                onClick={() => handleChangeRole(member.id, 'ADMIN')}
+                                className={cn(
+                                  "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors text-left",
+                                  member.role === 'ADMIN' && "bg-accent"
+                                )}
+                              >
+                                <Shield className="w-4 h-4 text-blue-500" />
+                                <span>Administrator</span>
+                              </button>
+                              <button
+                                onClick={() => handleChangeRole(member.id, 'MEMBER')}
+                                className={cn(
+                                  "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors text-left",
+                                  member.role === 'MEMBER' && "bg-accent"
+                                )}
+                              >
+                                <User className="w-4 h-4 text-muted-foreground" />
+                                <span>Medlem</span>
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      // Static role display for non-owners or for self
+                      <div className={cn(
+                        "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium",
+                        getRoleColor(member.role)
+                      )}>
+                        {getRoleIcon(member.role)}
+                        <span>{getRoleName(member.role)}</span>
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     {member.player ? (
@@ -225,7 +360,7 @@ export default function ClubMembersPage() {
             <Crown className="w-4 h-4 text-amber-500 mt-0.5" />
             <div>
               <p className="text-sm font-medium">Ejer</p>
-              <p className="text-xs text-muted-foreground">Fuld kontrol over klubben</p>
+              <p className="text-xs text-muted-foreground">Fuld kontrol, kan ændre roller</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
@@ -243,6 +378,11 @@ export default function ClubMembersPage() {
             </div>
           </div>
         </div>
+        {isOwner && (
+          <p className="text-xs text-muted-foreground mt-4 pt-3 border-t">
+            Som ejer kan du klikke på en rolle for at ændre den. Hvis du vælger at overdrage ejerskabet, bliver du automatisk administrator.
+          </p>
+        )}
       </div>
     </div>
   )

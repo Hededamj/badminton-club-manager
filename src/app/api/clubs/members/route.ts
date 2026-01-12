@@ -53,7 +53,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const session = await requireClubOwner()
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized - Owner access required' }, { status: 401 })
+      return NextResponse.json({ error: 'Kun ejeren kan ændre roller' }, { status: 401 })
     }
 
     const clubId = session.user.currentClubId!
@@ -74,26 +74,85 @@ export async function PATCH(req: NextRequest) {
         id: membershipId,
         clubId,
       },
+      include: {
+        user: true,
+      },
     })
 
     if (!membership) {
       return NextResponse.json(
-        { error: 'Membership not found' },
+        { error: 'Medlemskab ikke fundet' },
         { status: 404 }
       )
     }
 
-    // Can't change owner's role
-    if (membership.role === 'OWNER' && role && role !== 'OWNER') {
-      return NextResponse.json(
-        { error: 'Cannot change owner role' },
-        { status: 400 }
-      )
+    // Handle role changes
+    if (role !== undefined && ['OWNER', 'ADMIN', 'MEMBER'].includes(role)) {
+      // If transferring ownership to someone else
+      if (role === 'OWNER' && membership.role !== 'OWNER') {
+        // Get current owner's membership
+        const currentOwnerMembership = await prisma.clubMembership.findFirst({
+          where: {
+            clubId,
+            role: 'OWNER',
+          },
+        })
+
+        if (currentOwnerMembership) {
+          // Use a transaction to transfer ownership
+          await prisma.$transaction([
+            // Demote current owner to ADMIN
+            prisma.clubMembership.update({
+              where: { id: currentOwnerMembership.id },
+              data: { role: 'ADMIN' },
+            }),
+            // Promote new member to OWNER
+            prisma.clubMembership.update({
+              where: { id: membershipId },
+              data: { role: 'OWNER' },
+            }),
+          ])
+
+          // Return updated membership
+          const updated = await prisma.clubMembership.findFirst({
+            where: { id: membershipId },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                },
+              },
+              player: {
+                select: {
+                  id: true,
+                  name: true,
+                  level: true,
+                },
+              },
+            },
+          })
+
+          return NextResponse.json({
+            ...updated,
+            ownershipTransferred: true,
+            message: 'Ejerskab overdraget'
+          })
+        }
+      }
+
+      // If trying to demote the owner (not allowed directly - must transfer ownership)
+      if (membership.role === 'OWNER' && role !== 'OWNER') {
+        return NextResponse.json(
+          { error: 'Kan ikke nedgradere ejeren. Overdrag først ejerskabet til en anden.' },
+          { status: 400 }
+        )
+      }
     }
 
     const updateData: any = {}
 
-    if (role !== undefined && ['OWNER', 'ADMIN', 'MEMBER'].includes(role)) {
+    if (role !== undefined && ['ADMIN', 'MEMBER'].includes(role)) {
       updateData.role = role
     }
 
@@ -105,7 +164,7 @@ export async function PATCH(req: NextRequest) {
         })
         if (!player) {
           return NextResponse.json(
-            { error: 'Player not found in this club' },
+            { error: 'Spiller ikke fundet i denne klub' },
             { status: 400 }
           )
         }
@@ -137,7 +196,7 @@ export async function PATCH(req: NextRequest) {
   } catch (error) {
     console.error('Error updating member:', error)
     return NextResponse.json(
-      { error: 'Failed to update member' },
+      { error: 'Kunne ikke opdatere medlem' },
       { status: 500 }
     )
   }
