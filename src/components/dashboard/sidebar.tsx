@@ -287,9 +287,9 @@ export function Sidebar({ onClose }: SidebarProps = {}) {
       </nav>
 
       {/* Footer - Powered by CourtPlanner */}
-      <div className="p-4 border-t">
-        <p className="text-xs text-muted-foreground text-center">
-          Powered by CourtPlanner
+      <div className="py-4 border-t w-full">
+        <p className="text-xs text-muted-foreground text-center w-full">
+          Powered by CourtPlanner 2026
         </p>
       </div>
     </div>
