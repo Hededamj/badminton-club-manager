@@ -424,13 +424,20 @@ export default function TrainingDetailPage() {
   ) => {
     if (!selectedMatchPlayer || !training) return
 
+    // Prevent multiple swaps at once
+    if (swapping) return
+    setSwapping(true)
+
     const previousTraining = training // Save for rollback
     setError('')
 
     // If swapping within the same match
     if (selectedMatchPlayer.matchId === targetMatchId) {
       const match = training.matches.find(m => m.id === targetMatchId)
-      if (!match) return
+      if (!match) {
+        setSwapping(false)
+        return
+      }
 
       // Build optimistic update for UI
       const optimisticMatchPlayers = match.matchPlayers.map(mp => {
@@ -482,13 +489,18 @@ export default function TrainingDetailPage() {
         // Rollback on error
         setTraining(previousTraining)
         setError('Kunne ikke gemme ændringen')
+      } finally {
+        setSwapping(false)
       }
     } else {
       // Swapping between different matches - need to update both matches
       const sourceMatch = training.matches.find(m => m.id === selectedMatchPlayer.matchId)
       const targetMatch = training.matches.find(m => m.id === targetMatchId)
 
-      if (!sourceMatch || !targetMatch) return
+      if (!sourceMatch || !targetMatch) {
+        setSwapping(false)
+        return
+      }
 
       // Update source match: remove selected player, add target player if exists
       let sourcePlayers = sourceMatch.matchPlayers
@@ -574,6 +586,8 @@ export default function TrainingDetailPage() {
         setTraining(previousTraining)
         setError('Kunne ikke gemme ændringen')
         fetchTraining()
+      } finally {
+        setSwapping(false)
       }
     }
   }
@@ -585,15 +599,25 @@ export default function TrainingDetailPage() {
   ) => {
     if (!training || !selectedBenchPlayer) return
 
+    // Prevent multiple operations at once
+    if (swapping) return
+    setSwapping(true)
+
     const previousTraining = training // Save for rollback
     setError('')
 
     const match = training.matches.find(m => m.id === matchId)
-    if (!match) return
+    if (!match) {
+      setSwapping(false)
+      return
+    }
 
     // Find the player being added from training players
     const playerToAdd = training.trainingPlayers.find(tp => tp.player.id === selectedBenchPlayer)?.player
-    if (!playerToAdd) return
+    if (!playerToAdd) {
+      setSwapping(false)
+      return
+    }
 
     // Build optimistic match players
     let optimisticMatchPlayers = [...match.matchPlayers]
@@ -653,6 +677,8 @@ export default function TrainingDetailPage() {
       // Rollback on error
       setTraining(previousTraining)
       setError('Kunne ikke gemme ændringen')
+    } finally {
+      setSwapping(false)
     }
   }
 
