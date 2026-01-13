@@ -520,6 +520,62 @@ export default function TrainingDetailPage() {
         return
       }
 
+      // Find the players involved
+      const selectedPlayer = sourceMatch.matchPlayers.find(mp => mp.player.id === selectedMatchPlayer.playerId)
+      const targetPlayer = targetPlayerId ? targetMatch.matchPlayers.find(mp => mp.player.id === targetPlayerId) : null
+
+      if (!selectedPlayer) {
+        setSwapping(false)
+        return
+      }
+
+      // Build optimistic UI state for BOTH matches
+      const optimisticSourcePlayers = sourceMatch.matchPlayers
+        .filter(mp => mp.player.id !== selectedMatchPlayer.playerId)
+        .map(mp => ({ ...mp }))
+
+      if (targetPlayer) {
+        optimisticSourcePlayers.push({
+          ...targetPlayer,
+          team: selectedMatchPlayer.team,
+          position: selectedMatchPlayer.position,
+        })
+      }
+
+      const optimisticTargetPlayers = targetMatch.matchPlayers
+        .filter(mp => !targetPlayerId || mp.player.id !== targetPlayerId)
+        .map(mp => ({ ...mp }))
+
+      optimisticTargetPlayers.push({
+        ...selectedPlayer,
+        team: targetTeam,
+        position: targetPosition,
+      })
+
+      // Optimistic UI update BEFORE API calls
+      setTraining(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          matches: prev.matches.map(m => {
+            if (m.id === selectedMatchPlayer.matchId) {
+              return { ...m, matchPlayers: optimisticSourcePlayers }
+            }
+            if (m.id === targetMatchId) {
+              return { ...m, matchPlayers: optimisticTargetPlayers }
+            }
+            return m
+          })
+        }
+      })
+      setSelectedMatchPlayer(null)
+
+      // Highlight swapped players
+      const playersToHighlight = new Set<string>([selectedMatchPlayer.playerId])
+      if (targetPlayerId) playersToHighlight.add(targetPlayerId)
+      setHighlightedPlayers(playersToHighlight)
+      setTimeout(() => setHighlightedPlayers(new Set()), 800)
+
       // Update source match: remove selected player, add target player if exists
       let sourcePlayers = sourceMatch.matchPlayers
         .filter(mp => mp.player.id !== selectedMatchPlayer.playerId)
@@ -542,8 +598,6 @@ export default function TrainingDetailPage() {
 
       // Safety check: limit to 4 players max
       sourcePlayers = sourcePlayers.slice(0, 4)
-
-      setSelectedMatchPlayer(null)
 
       try {
         // To avoid validation errors, we need to update in 3 steps:
@@ -614,8 +668,7 @@ export default function TrainingDetailPage() {
           }
         }
 
-        // Refresh to get updated data
-        refreshTraining()
+        // UI already updated optimistically, no need to refresh
       } catch (err: any) {
         console.error('Cross-match swap error:', err)
         setTraining(previousTraining)
