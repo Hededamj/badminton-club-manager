@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Edit, Users, Check } from 'lucide-react'
+import { Edit, Users, Check, X, ArrowRight } from 'lucide-react'
 
 interface Player {
   id: string
@@ -39,8 +39,10 @@ interface TrainingCourtViewProps {
   onSelectBenchPlayer: (playerId: string) => void
   onClickPlayerPosition: (matchId: string, team: number, position: number, currentPlayerId?: string) => void
   onMoveToBench: () => void
+  onClearSelection: () => void
   trainingStatus: string
   highlightedPlayers: Set<string>
+  allPlayers?: Player[]
 }
 
 // Determine match type based on player genders
@@ -69,9 +71,27 @@ export function TrainingCourtViewRedesign({
   onSelectBenchPlayer,
   onClickPlayerPosition,
   onMoveToBench,
+  onClearSelection,
   trainingStatus,
   highlightedPlayers,
+  allPlayers = [],
 }: TrainingCourtViewProps) {
+  // Find selected player name for selection bar
+  const getSelectedPlayerName = () => {
+    if (selectedBenchPlayer) {
+      const player = allPlayers.find(p => p.id === selectedBenchPlayer)
+      return player?.name || 'Ukendt spiller'
+    }
+    if (selectedMatchPlayer) {
+      const match = matches.find(m => m.id === selectedMatchPlayer.matchId)
+      const mp = match?.matchPlayers.find(p => p.player.id === selectedMatchPlayer.playerId)
+      return mp?.player.name || 'Ukendt spiller'
+    }
+    return null
+  }
+
+  const selectedPlayerName = getSelectedPlayerName()
+  const hasSelection = selectedBenchPlayer || selectedMatchPlayer
 
   // Group matches by round (matchNumber)
   const matchesPerRound = 3
@@ -229,7 +249,7 @@ export function TrainingCourtViewRedesign({
                                     onClickPlayerPosition(match.id, 1, position, mp?.player.id)
                                   }
                                 }}
-                                className={`flex items-center justify-between p-2 rounded transition-all min-h-[44px] touch-manipulation ${
+                                className={`flex items-center justify-between p-2 rounded transition-all min-h-[52px] touch-manipulation ${
                                   isHighlighted
                                     ? 'bg-[#005A9C]/20 border-2 border-[#005A9C] animate-pulse'
                                     : trainingStatus === 'IN_PROGRESS' && !isCompleted
@@ -288,7 +308,7 @@ export function TrainingCourtViewRedesign({
                                     onClickPlayerPosition(match.id, 2, position, mp?.player.id)
                                   }
                                 }}
-                                className={`flex items-center justify-between p-2 rounded transition-all min-h-[44px] touch-manipulation ${
+                                className={`flex items-center justify-between p-2 rounded transition-all min-h-[52px] touch-manipulation ${
                                   isHighlighted
                                     ? 'bg-[#005A9C]/20 border-2 border-[#005A9C] animate-pulse'
                                     : trainingStatus === 'IN_PROGRESS' && !isCompleted
@@ -366,6 +386,49 @@ export function TrainingCourtViewRedesign({
           )
         })}
       </div>
+
+      {/* Mobile Selection Bar - Fixed at bottom */}
+      {hasSelection && (
+        <div className="fixed bottom-0 left-0 right-0 bg-[#005A9C] text-white p-4 shadow-2xl z-50 md:hidden safe-area-inset-bottom">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <ArrowRight className="w-5 h-5 flex-shrink-0 animate-pulse" />
+              <div className="min-w-0">
+                <div className="text-xs opacity-80">
+                  {selectedBenchPlayer ? 'Fra bænken' : 'Valgt spiller'}
+                </div>
+                <div className="font-bold truncate">{selectedPlayerName}</div>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              {selectedMatchPlayer && (
+                <Button
+                  onClick={onMoveToBench}
+                  size="sm"
+                  variant="secondary"
+                  className="bg-white text-[#005A9C] hover:bg-gray-100 font-bold touch-manipulation"
+                >
+                  Bænk
+                </Button>
+              )}
+              <Button
+                onClick={onClearSelection}
+                size="sm"
+                variant="ghost"
+                className="text-white hover:bg-white/20 touch-manipulation"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+          <div className="text-xs opacity-80 mt-2 text-center">
+            Tryk på en position for at {selectedBenchPlayer ? 'placere spilleren' : 'bytte plads'}
+          </div>
+        </div>
+      )}
+
+      {/* Spacer when selection bar is visible on mobile */}
+      {hasSelection && <div className="h-28 md:hidden" />}
     </div>
   )
 }

@@ -1177,8 +1177,13 @@ export default function TrainingDetailPage() {
                 onSelectBenchPlayer={handleSelectBenchPlayer}
                 onClickPlayerPosition={handleClickPlayerPosition}
                 onMoveToBench={handleMoveToBench}
+                onClearSelection={() => {
+                  setSelectedBenchPlayer(null)
+                  setSelectedMatchPlayer(null)
+                }}
                 trainingStatus={getTrainingStatus()}
                 highlightedPlayers={highlightedPlayers}
+                allPlayers={training.trainingPlayers.map(tp => tp.player)}
               />
             ) : (
               // List view (original)
