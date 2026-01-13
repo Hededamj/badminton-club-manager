@@ -225,7 +225,19 @@ export async function POST(request: NextRequest) {
       )
     )
 
+    // Find which names couldn't be matched
+    const matchedNames = matchedPlayers.map(p => p.name.toLowerCase())
+    const unmatchedNames = attendingUsers
+      .filter(user => {
+        const userName = user.name.trim().toLowerCase()
+        return !allPlayers.some(player =>
+          player.name.toLowerCase().includes(userName) || userName.includes(player.name.toLowerCase())
+        )
+      })
+      .map(user => user.name.trim())
+
     console.log(`Matched ${matchedPlayers.length} players from ${attendingNames.length} attendees`)
+    console.log('Unmatched names:', unmatchedNames)
 
     // Create training
     const createdTraining = await prisma.training.create({
@@ -257,7 +269,8 @@ export async function POST(request: NextRequest) {
       training: createdTraining,
       matched: matchedPlayers.length,
       total: attendingNames.length,
-      unmatched: attendingNames.length - matchedPlayers.length,
+      unmatched: unmatchedNames.length,
+      unmatchedNames,
     })
   } catch (error: any) {
     console.error('Error importing training:', error)

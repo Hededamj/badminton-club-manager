@@ -166,7 +166,10 @@ export function ImportHoldsportTrainingsDialog({
       setImportedIds(prev => new Set([...prev, training.holdsportId]))
 
       // Show success message
-      alert(`Træning importeret!\n\n${result.matched} spillere matchet fra ${result.total} tilmeldte.\n${result.unmatched > 0 ? `\n${result.unmatched} spillere kunne ikke matches - de skal måske oprettes først.` : ''}`)
+      const unmatchedList = result.unmatchedNames?.length > 0
+        ? `\n\nKunne ikke matche:\n- ${result.unmatchedNames.join('\n- ')}`
+        : ''
+      alert(`Træning importeret!\n\n${result.matched} spillere matchet fra ${result.total} tilmeldte.${result.unmatched > 0 ? `\n\n${result.unmatched} spillere kunne ikke matches - de skal oprettes først.${unmatchedList}` : ''}`)
 
       onSuccess()
       onOpenChange(false) // Close dialog after successful import
