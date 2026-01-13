@@ -116,15 +116,44 @@ export async function POST(
       )
     )
 
+    // Find unmatched names (players not in our database)
+    const unmatchedNames = attendingUsers
+      .filter(user => {
+        const userName = user.name.trim().toLowerCase()
+        return !allPlayers.some(player =>
+          player.name.toLowerCase().includes(userName) || userName.includes(player.name.toLowerCase())
+        )
+      })
+      .map(user => user.name.trim())
+
     console.log(`Matched ${matchedPlayers.length} players from ${attendingNames.length} attendees`)
+    console.log('Unmatched names:', unmatchedNames)
+
+    // Create new players for unmatched names
+    const createdPlayers = []
+    for (const name of unmatchedNames) {
+      const newPlayer = await prisma.player.create({
+        data: {
+          clubId,
+          name,
+          level: 1500, // Default ELO
+          isActive: true,
+        },
+      })
+      createdPlayers.push(newPlayer)
+      console.log('Created new player:', newPlayer.name)
+    }
+
+    // Combine matched and newly created players
+    const allSyncedPlayers = [...matchedPlayers, ...createdPlayers]
 
     // Get current training players
     const currentPlayerIds = training.trainingPlayers.map(tp => tp.playerId)
-    const matchedPlayerIds = matchedPlayers.map(p => p.id)
+    const syncedPlayerIds = allSyncedPlayers.map(p => p.id)
 
     // Determine changes
-    const playersToAdd = matchedPlayers.filter(p => !currentPlayerIds.includes(p.id))
-    const playersToRemove = training.trainingPlayers.filter(tp => !matchedPlayerIds.includes(tp.playerId))
+    const playersToAdd = allSyncedPlayers.filter(p => !currentPlayerIds.includes(p.id))
+    const playersToRemove = training.trainingPlayers.filter(tp => !syncedPlayerIds.includes(tp.playerId))
 
     console.log(`Players to add: ${playersToAdd.length}, Players to remove: ${playersToRemove.length}`)
 
@@ -149,10 +178,12 @@ export async function POST(
       success: true,
       added: playersToAdd.length,
       removed: playersToRemove.length,
-      total: matchedPlayers.length,
+      created: createdPlayers.length,
+      total: allSyncedPlayers.length,
       playerNames: {
         added: playersToAdd.map(p => p.name),
         removed: playersToRemove.map(tp => tp.player.name),
+        created: createdPlayers.map(p => p.name),
       },
     })
   } catch (error: any) {

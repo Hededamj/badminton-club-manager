@@ -239,6 +239,24 @@ export async function POST(request: NextRequest) {
     console.log(`Matched ${matchedPlayers.length} players from ${attendingNames.length} attendees`)
     console.log('Unmatched names:', unmatchedNames)
 
+    // Create new players for unmatched names
+    const createdPlayers = []
+    for (const name of unmatchedNames) {
+      const newPlayer = await prisma.player.create({
+        data: {
+          clubId,
+          name,
+          level: 1500, // Default ELO
+          isActive: true,
+        },
+      })
+      createdPlayers.push(newPlayer)
+      console.log('Created new player:', newPlayer.name)
+    }
+
+    // Combine matched and newly created players
+    const allTrainingPlayers = [...matchedPlayers, ...createdPlayers]
+
     // Create training
     const createdTraining = await prisma.training.create({
       data: {
@@ -250,7 +268,7 @@ export async function POST(request: NextRequest) {
         status: 'PLANNED',
         holdsportId: training.holdsportId, // Save Holdsport ID for syncing
         trainingPlayers: {
-          create: matchedPlayers.map(player => ({
+          create: allTrainingPlayers.map(player => ({
             playerId: player.id,
           })),
         },
@@ -268,9 +286,9 @@ export async function POST(request: NextRequest) {
       success: true,
       training: createdTraining,
       matched: matchedPlayers.length,
+      created: createdPlayers.length,
+      createdNames: createdPlayers.map(p => p.name),
       total: attendingNames.length,
-      unmatched: unmatchedNames.length,
-      unmatchedNames,
     })
   } catch (error: any) {
     console.error('Error importing training:', error)

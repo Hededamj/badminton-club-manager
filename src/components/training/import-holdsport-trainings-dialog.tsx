@@ -166,10 +166,10 @@ export function ImportHoldsportTrainingsDialog({
       setImportedIds(prev => new Set([...prev, training.holdsportId]))
 
       // Show success message
-      const unmatchedList = result.unmatchedNames?.length > 0
-        ? `\n\nKunne ikke matche:\n- ${result.unmatchedNames.join('\n- ')}`
+      const createdList = result.createdNames?.length > 0
+        ? `\n\nNye spillere oprettet:\n- ${result.createdNames.join('\n- ')}`
         : ''
-      alert(`Træning importeret!\n\n${result.matched} spillere matchet fra ${result.total} tilmeldte.${result.unmatched > 0 ? `\n\n${result.unmatched} spillere kunne ikke matches - de skal oprettes først.${unmatchedList}` : ''}`)
+      alert(`Træning importeret!\n\n${result.matched} eksisterende spillere matchet.\n${result.created || 0} nye spillere oprettet.\n\nTotal: ${result.total} spillere tilføjet.${createdList}`)
 
       onSuccess()
       onOpenChange(false) // Close dialog after successful import
