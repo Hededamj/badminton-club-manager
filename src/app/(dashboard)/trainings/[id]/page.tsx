@@ -530,12 +530,18 @@ export default function TrainingDetailPage() {
         }))
 
       if (targetPlayerId) {
-        sourcePlayers.push({
-          playerId: targetPlayerId,
-          team: selectedMatchPlayer.team,
-          position: selectedMatchPlayer.position,
-        })
+        // Only add if not already in sourcePlayers (prevent duplicates)
+        if (!sourcePlayers.some(p => p.playerId === targetPlayerId)) {
+          sourcePlayers.push({
+            playerId: targetPlayerId,
+            team: selectedMatchPlayer.team,
+            position: selectedMatchPlayer.position,
+          })
+        }
       }
+
+      // Safety check: limit to 4 players max
+      sourcePlayers = sourcePlayers.slice(0, 4)
 
       setSelectedMatchPlayer(null)
 
@@ -565,6 +571,7 @@ export default function TrainingDetailPage() {
         // Step 2: Update target match (remove targetPlayer if exists, add selectedPlayer)
         let targetPlayers = targetMatch.matchPlayers
           .filter(mp => !targetPlayerId || mp.player.id !== targetPlayerId)
+          .filter(mp => mp.player.id !== selectedMatchPlayer.playerId) // Also remove if already there
           .map(mp => ({
             playerId: mp.player.id,
             team: mp.team,
@@ -576,6 +583,9 @@ export default function TrainingDetailPage() {
           team: targetTeam,
           position: targetPosition,
         })
+
+        // Safety check: limit to 4 players max
+        targetPlayers = targetPlayers.slice(0, 4)
 
         const targetRes = await fetch(`/api/trainings/${training.id}/matches/${targetMatchId}`, {
           method: 'PATCH',
@@ -682,11 +692,20 @@ export default function TrainingDetailPage() {
     setTimeout(() => setHighlightedPlayers(new Set()), 800)
 
     // API call in background
-    const playersForApi = optimisticMatchPlayers.map(mp => ({
-      playerId: mp.player.id,
-      team: mp.team,
-      position: mp.position,
-    }))
+    // Deduplicate and limit to 4 players
+    const seenIds = new Set<string>()
+    const playersForApi = optimisticMatchPlayers
+      .filter(mp => {
+        if (seenIds.has(mp.player.id)) return false
+        seenIds.add(mp.player.id)
+        return true
+      })
+      .slice(0, 4)
+      .map(mp => ({
+        playerId: mp.player.id,
+        team: mp.team,
+        position: mp.position,
+      }))
 
     try {
       const res = await fetch(`/api/trainings/${training.id}/matches/${matchId}`, {
@@ -696,12 +715,15 @@ export default function TrainingDetailPage() {
       })
 
       if (!res.ok) {
-        throw new Error('Kunne ikke tilføje spiller')
+        const errorData = await res.json().catch(() => ({}))
+        console.error('Add player to match failed:', errorData)
+        throw new Error(errorData.error || 'Kunne ikke tilføje spiller')
       }
-    } catch (err) {
+    } catch (err: any) {
       // Rollback on error
+      console.error('Add player error:', err)
       setTraining(previousTraining)
-      setError('Kunne ikke gemme ændringen')
+      setError(err.message || 'Kunne ikke gemme ændringen')
     } finally {
       setSwapping(false)
     }
