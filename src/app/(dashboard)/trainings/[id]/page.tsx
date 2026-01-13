@@ -104,8 +104,9 @@ export default function TrainingDetailPage() {
         return
       }
 
-      // Only auto-sync if training is still in PLANNED state
-      if (training.matches.length > 0) {
+      // Don't auto-sync completed trainings
+      const allMatchesHaveResults = training.matches.length > 0 && training.matches.every(m => m.result !== null)
+      if (allMatchesHaveResults) {
         return
       }
 
@@ -832,7 +833,7 @@ export default function TrainingDetailPage() {
           </div>
 
           <div className="flex gap-2 flex-wrap">
-            {training.holdsportId && getTrainingStatus() === 'PLANNED' && (
+            {training.holdsportId && getTrainingStatus() !== 'COMPLETED' && (
               <Button
                 variant="outline"
                 onClick={handleSyncWithHoldsport}
