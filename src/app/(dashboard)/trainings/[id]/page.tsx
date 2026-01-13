@@ -106,7 +106,12 @@ export default function TrainingDetailPage() {
   // Auto-sync with Holdsport when page loads
   useEffect(() => {
     const autoSync = async () => {
-      if (!training?.holdsportId || syncing || hasSyncedRef.current) {
+      // Already synced or currently syncing/swapping - skip
+      if (hasSyncedRef.current || syncing || swapping) {
+        return
+      }
+
+      if (!training?.holdsportId) {
         return
       }
 
@@ -125,8 +130,9 @@ export default function TrainingDetailPage() {
         return // No credentials, skip auto-sync
       }
 
-      console.log('Auto-syncing with Holdsport...')
+      // Mark as synced BEFORE doing anything to prevent race conditions
       hasSyncedRef.current = true
+      console.log('Auto-syncing with Holdsport...')
 
       try {
         setSyncing(true)
@@ -139,8 +145,9 @@ export default function TrainingDetailPage() {
         if (res.ok) {
           const data = await res.json()
           console.log('Auto-sync complete:', data)
-          if (data.added > 0 || data.removed > 0) {
-            fetchTraining() // Refresh if there were changes
+          // Only refresh if there were changes AND no swap is in progress
+          if ((data.added > 0 || data.removed > 0) && !swapping) {
+            fetchTraining()
           }
         }
       } catch (err) {
