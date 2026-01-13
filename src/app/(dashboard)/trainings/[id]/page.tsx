@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Calendar, Users, Trash2, Play, CheckCircle2, Grid3x3, List, RefreshCw, Pause, PlayCircle, Edit, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -92,15 +92,21 @@ export default function TrainingDetailPage() {
   const [showAddGuestDialog, setShowAddGuestDialog] = useState(false)
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false)
   const [highlightedPlayers, setHighlightedPlayers] = useState<Set<string>>(new Set())
+  const hasSyncedRef = useRef(false)
 
   useEffect(() => {
     fetchTraining()
   }, [params.id])
 
+  // Reset sync ref when training id changes
+  useEffect(() => {
+    hasSyncedRef.current = false
+  }, [params.id])
+
   // Auto-sync with Holdsport when page loads
   useEffect(() => {
     const autoSync = async () => {
-      if (!training?.holdsportId || syncing) {
+      if (!training?.holdsportId || syncing || hasSyncedRef.current) {
         return
       }
 
@@ -120,6 +126,7 @@ export default function TrainingDetailPage() {
       }
 
       console.log('Auto-syncing with Holdsport...')
+      hasSyncedRef.current = true
 
       try {
         setSyncing(true)
