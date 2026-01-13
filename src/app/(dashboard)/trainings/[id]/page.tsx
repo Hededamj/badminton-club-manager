@@ -498,12 +498,15 @@ export default function TrainingDetailPage() {
         })
 
         if (!res.ok) {
-          throw new Error('Kunne ikke bytte spillere')
+          const errorData = await res.json().catch(() => ({}))
+          console.error('Same-match swap failed:', errorData)
+          throw new Error(errorData.error || 'Kunne ikke bytte spillere')
         }
-      } catch (err) {
+      } catch (err: any) {
         // Rollback on error
+        console.error('Swap error:', err)
         setTraining(previousTraining)
-        setError('Kunne ikke gemme ændringen')
+        setError(err.message || 'Kunne ikke gemme ændringen')
       } finally {
         setSwapping(false)
       }
@@ -554,7 +557,9 @@ export default function TrainingDetailPage() {
         })
 
         if (!sourceRes1.ok) {
-          throw new Error('Kunne ikke fjerne spiller fra kildekamp')
+          const errorData = await sourceRes1.json().catch(() => ({}))
+          console.error('Step 1 failed:', errorData)
+          throw new Error(errorData.error || 'Kunne ikke fjerne spiller fra kildekamp')
         }
 
         // Step 2: Update target match (remove targetPlayer if exists, add selectedPlayer)
@@ -579,7 +584,9 @@ export default function TrainingDetailPage() {
         })
 
         if (!targetRes.ok) {
-          throw new Error('Kunne ikke opdatere målkamp')
+          const errorData = await targetRes.json().catch(() => ({}))
+          console.error('Step 2 failed:', errorData)
+          throw new Error(errorData.error || 'Kunne ikke opdatere målkamp')
         }
 
         // Step 3: Add targetPlayer to source match (if there is one)
@@ -591,15 +598,18 @@ export default function TrainingDetailPage() {
           })
 
           if (!sourceRes2.ok) {
-            throw new Error('Kunne ikke tilføje spiller til kildekamp')
+            const errorData = await sourceRes2.json().catch(() => ({}))
+            console.error('Step 3 failed:', errorData)
+            throw new Error(errorData.error || 'Kunne ikke tilføje spiller til kildekamp')
           }
         }
 
         // Refresh to get updated data
         refreshTraining()
-      } catch (err) {
+      } catch (err: any) {
+        console.error('Cross-match swap error:', err)
         setTraining(previousTraining)
-        setError('Kunne ikke gemme ændringen')
+        setError(err.message || 'Kunne ikke gemme ændringen')
         fetchTraining()
       } finally {
         setSwapping(false)

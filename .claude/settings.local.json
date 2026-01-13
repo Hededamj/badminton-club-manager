@@ -16,7 +16,8 @@
       "Bash(npm install)",
       "Skill(frontend-design)",
       "Bash(npx prisma migrate:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(npx vercel logs badminton-club-manager --token=$VERCEL_TOKEN)"
     ]
   }
 }
