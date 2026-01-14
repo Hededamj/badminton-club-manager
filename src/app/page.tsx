@@ -122,36 +122,128 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Hero visual - Abstract court representation */}
+        {/* Hero visual - App Mockup */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="max-w-5xl mx-auto mt-16 px-4"
+          className="max-w-6xl mx-auto mt-16 px-4"
         >
-          <div className="relative bg-gradient-to-br from-[#005A9C] to-[#003d6b] rounded-3xl p-8 md:p-12 shadow-2xl shadow-[#005A9C]/20 overflow-hidden">
-            {/* Court pattern overlay */}
-            <div className="absolute inset-0 opacity-10">
-              <svg viewBox="0 0 800 400" fill="none" className="w-full h-full">
-                <rect x="50" y="50" width="700" height="300" stroke="white" strokeWidth="2" fill="none"/>
-                <line x1="400" y1="50" x2="400" y2="350" stroke="white" strokeWidth="2"/>
-                <rect x="150" y="100" width="200" height="200" stroke="white" strokeWidth="1" fill="none"/>
-                <rect x="450" y="100" width="200" height="200" stroke="white" strokeWidth="1" fill="none"/>
-              </svg>
+          {/* Browser window frame */}
+          <div className="bg-slate-800 rounded-t-2xl p-3 flex items-center gap-2">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500" />
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+            </div>
+            <div className="flex-1 mx-4">
+              <div className="bg-slate-700 rounded-lg px-4 py-1.5 text-sm text-slate-400 max-w-md mx-auto">
+                courtplanner.dk/trainings/tirsdag-traening
+              </div>
+            </div>
+          </div>
+
+          {/* App content */}
+          <div className="bg-[#f8fafc] rounded-b-2xl shadow-2xl shadow-slate-900/20 overflow-hidden border border-slate-200 border-t-0">
+            {/* App header */}
+            <div className="bg-white border-b border-slate-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#005A9C] rounded-lg flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="font-bold text-slate-900">Tirsdag Træning</span>
+                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">I gang</span>
+                </div>
+                <div className="hidden sm:flex items-center gap-2 text-sm text-slate-500">
+                  <Users className="w-4 h-4" />
+                  <span>12 spillere</span>
+                </div>
+              </div>
             </div>
 
-            <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6 text-white">
-              <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
-                <div className="text-4xl font-black mb-2">ELO</div>
-                <div className="text-white/80 text-sm">Niveau-baseret matchmaking sikrer fair og spændende kampe</div>
+            {/* Training view mockup */}
+            <div className="p-4 md:p-6">
+              {/* Round header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-slate-900">Runde 1</span>
+                  <span className="text-xs text-slate-500">3 baner aktive</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500">Bænk:</span>
+                  <div className="flex -space-x-1">
+                    {['bg-blue-500', 'bg-emerald-500', 'bg-amber-500'].map((color, i) => (
+                      <div key={i} className={`w-6 h-6 ${color} rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold text-white`}>
+                        {['MJ', 'KL', 'PH'][i]}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
-                <div className="text-4xl font-black mb-2">1-klik</div>
-                <div className="text-white/80 text-sm">Importer spillere direkte fra Holdsport</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
-                <div className="text-4xl font-black mb-2">Live</div>
-                <div className="text-white/80 text-sm">Realtids statistik og ranglister</div>
+
+              {/* Courts grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { court: 'Bane 2', team1: ['Anders Nielsen', 'Mette Hansen'], team2: ['Lars Petersen', 'Sofie Christensen'], score: null },
+                  { court: 'Bane 3', team1: ['Thomas Larsen', 'Helle Madsen'], team2: ['Christian Sørensen', 'Anne Jensen'], score: '21-18' },
+                  { court: 'Bane 4', team1: ['Martin Poulsen', 'Karen Andersen'], team2: ['Jens Olsen', 'Lise Møller'], score: null },
+                ].map((match, index) => (
+                  <div key={index} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                    {/* Court header */}
+                    <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 flex items-center justify-between">
+                      <span className="text-sm font-bold text-slate-700">{match.court}</span>
+                      {match.score && (
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded">
+                          {match.score}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Teams */}
+                    <div className="p-4 space-y-3">
+                      {/* Team 1 */}
+                      <div className="space-y-1.5">
+                        <div className="text-[10px] font-bold text-blue-600 uppercase">Hold 1</div>
+                        {match.team1.map((player, i) => (
+                          <div key={i} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
+                            <span className="text-sm font-medium text-slate-900">{player}</span>
+                            <span className="text-xs text-slate-400">{1480 + Math.floor(Math.random() * 100)}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* VS divider */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-px bg-slate-200" />
+                        <span className="text-[10px] font-black text-slate-300">VS</span>
+                        <div className="flex-1 h-px bg-slate-200" />
+                      </div>
+
+                      {/* Team 2 */}
+                      <div className="space-y-1.5">
+                        <div className="text-[10px] font-bold text-red-600 uppercase">Hold 2</div>
+                        {match.team2.map((player, i) => (
+                          <div key={i} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
+                            <span className="text-sm font-medium text-slate-900">{player}</span>
+                            <span className="text-xs text-slate-400">{1480 + Math.floor(Math.random() * 100)}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Result button */}
+                      {!match.score ? (
+                        <button className="w-full mt-2 bg-slate-900 text-white text-sm font-semibold py-2.5 rounded-lg">
+                          Resultat
+                        </button>
+                      ) : (
+                        <div className="w-full mt-2 bg-green-50 text-green-700 text-sm font-semibold py-2.5 rounded-lg text-center">
+                          ✓ Afsluttet
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
